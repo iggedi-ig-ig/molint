@@ -63,6 +63,7 @@ pub(super) fn hermite_expansion([i, j, t]: [i32; 3], dist: f64, a: f64, b: f64) 
 ///
 /// The value of the auxiliary integral.
 #[allow(clippy::many_single_char_names)]
+// TODO: make this iterative
 // see https://joshuagoings.com/2017/04/28/integrals/
 pub(super) fn coulomb_auxiliary(t: i32, u: i32, v: i32, n: i32, p: f64, diff: Vector3<f64>) -> f64 {
     if t == u && u == v && v == 0 {

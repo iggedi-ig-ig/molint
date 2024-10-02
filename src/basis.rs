@@ -1,11 +1,5 @@
-/// This is only used for convenient passing around of values
-pub struct GaussianPrimitive {
-    pub coefficient: f64,
-    pub exponent: f64,
-    pub angular: (i32, i32, i32),
-}
-
 /// Data associated with a contracted gaussian. stored as a struct of lists.
+#[derive(Clone, Debug)]
 pub struct ContractedGaussian {
     pub coefficients: Vec<f64>,
     pub exponents: Vec<f64>,

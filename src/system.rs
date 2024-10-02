@@ -1,19 +1,26 @@
+use nalgebra::Vector3;
+
+use crate::basis::ContractedGaussian;
+
+#[derive(Copy, Clone, Debug)]
 pub struct Atom {
     /// also the charge of the nucleus
     pub ordinal: usize,
     pub position: Vector3<f64>,
 }
 
+#[derive(Debug)]
 pub struct MolecularSystem {
-    atoms: Vec<Atom>,
-    basis: Vec<ContractedGaussian>,
-    shells: Vec<Shell>,
+    pub atoms: Vec<Atom>,
+    pub basis: Vec<ContractedGaussian>,
+    pub(crate) shells: Vec<Shell>,
 }
 
+#[derive(Debug)]
 pub struct Shell {
-    shell_type: ShellType,
-    atom_index: usize,
-    basis_indices: Vec<usize>,
+    pub(crate) shell_type: ShellType,
+    pub(crate) atom_index: usize,
+    pub(crate) basis_indices: Vec<usize>,
 }
 
 #[derive(Copy, Clone, Debug)]
