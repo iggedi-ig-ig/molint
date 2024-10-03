@@ -1,8 +1,8 @@
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, fs::File, path::Path};
 
 use serde::Deserialize;
 
-use crate::{periodic_table::ElementType, utils};
+use crate::{periodic_table::ElementType, system::Atom, utils};
 
 /// Data associated with a contracted gaussian. stored as a struct of lists.
 #[derive(Clone, Debug)]
@@ -23,30 +23,43 @@ impl ContractedGaussian {
 
 pub struct BasisSet(HashMap<ElementType, Vec<ContractedGaussian>>);
 
-#[derive(Deserialize)]
-pub struct ConfigBasisSet {
-    elements: HashMap<ElementType, ConfigElectronicConfiguration>,
+impl BasisSet {
+    pub fn load(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        let basis_set: BseBasisSet = serde_json::from_reader(File::open(path)?)?;
+        basis_set.try_into()
+    }
+
+    pub fn atomic_basis(&self, atom: &Atom) -> &[ContractedGaussian] {
+        let element_type = ElementType::from_ordinal(atom.ordinal)
+            .unwrap_or_else(|| panic!("failed to convert ordinal {} to ElementType", atom.ordinal));
+        &self.0[&element_type]
+    }
 }
 
-#[derive(Deserialize)]
-struct ConfigElectronicConfiguration {
-    electron_shells: Vec<ConfigElectronShell>,
+#[derive(Deserialize, Debug)]
+struct BseBasisSet {
+    elements: HashMap<ElementType, BseElectronicConfiguration>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
+struct BseElectronicConfiguration {
+    electron_shells: Vec<BseElectronShell>,
+}
+
+#[derive(Deserialize, Debug)]
 #[allow(unused)]
-struct ConfigElectronShell {
+struct BseElectronShell {
     function_type: String,
     angular_momentum: Vec<i32>,
     exponents: Vec<String>,
     coefficients: Vec<Vec<String>>,
 }
 
-impl TryFrom<ConfigBasisSet> for BasisSet {
+impl TryFrom<BseBasisSet> for BasisSet {
     // TODO: use a "better" type for error
-    type Error = Box<dyn Error>;
+    type Error = anyhow::Error;
 
-    fn try_from(value: ConfigBasisSet) -> Result<Self, Self::Error> {
+    fn try_from(value: BseBasisSet) -> Result<Self, Self::Error> {
         let mut atomic_mapping = HashMap::with_capacity(value.elements.len());
 
         // TODO: this is pretty deeply nested, this can definitely be improved somehow
@@ -54,18 +67,17 @@ impl TryFrom<ConfigBasisSet> for BasisSet {
             let mut element_basis = Vec::new();
 
             for electron_shell in &configuration.electron_shells {
+                if electron_shell.function_type != "gto" {
+                    log::warn!("skipping function type {}", electron_shell.function_type);
+                    continue;
+                }
+
                 for (index, &angular_magnitude) in
                     electron_shell.angular_momentum.iter().enumerate()
                 {
                     let angular_vectors = generate_angular_vectors(angular_magnitude);
 
                     for angular @ (i, j, k) in angular_vectors {
-                        assert_eq!(
-                            electron_shell.exponents.len(),
-                            electron_shell.coefficients.len(),
-                            "have to have the same amount of exponents and coefficients"
-                        );
-
                         let mut exponents = Vec::with_capacity(electron_shell.exponents.len());
                         let mut coefficients =
                             Vec::with_capacity(electron_shell.coefficients.len());

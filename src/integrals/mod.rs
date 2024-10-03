@@ -1,49 +1,46 @@
-#![allow(unused)]
-#![deny(unused_imports)]
-
-use crate::system::{MolecularSystem, ShellType};
+use crate::system::MolecularSystem;
 use nalgebra::DMatrix;
 
+mod eri;
+mod kinetic;
+mod nuclear;
 mod overlap;
 
-pub fn overlap(system: &MolecularSystem) -> DMatrix<f64> {
-    let mut overlap = DMatrix::zeros(system.n_basis(), system.n_basis());
+macro_rules! one_electron_integral {
+    ($name:ident, $function:path) => {
+        pub fn $name(system: &MolecularSystem) -> DMatrix<f64> {
+            let mut output = DMatrix::zeros(system.n_basis(), system.n_basis());
 
-    for a in 0..system.shells.len() {
-        let (shell_type_a, pos_a, basis_indices_a) = system.shell(a);
-        let basis_a = system.shell_basis(a);
+            for a in 0..system.shells.len() {
+                let (shell_type_a, pos_a, (basis_index_start_a, basis_index_end_a)) =
+                    system.shell(a);
+                let basis_a = system.shell_basis(a);
 
-        for b in a + 1..system.shells.len() {
-            let (shell_type_b, pos_b, basis_indices_b) = system.shell(b);
-            let basis_b = system.shell_basis(b);
-            let diff = pos_b - pos_a;
+                for b in a + 1..system.shells.len() {
+                    let (shell_type_b, pos_b, (basis_index_start_b, basis_index_end_b)) =
+                        system.shell(b);
+                    let basis_b = system.shell_basis(b);
+                    let diff = pos_b - pos_a;
 
-            let result = match (shell_type_a, shell_type_b) {
-                (ShellType::S, ShellType::S) => overlap::ss_overlap(diff, &basis_a, &basis_b),
-                (ShellType::P, ShellType::P) => overlap::pp_overlap(diff, &basis_a, &basis_b),
-                (ShellType::D, ShellType::D) => overlap::dd_overlap(diff, &basis_a, &basis_b),
-                _ => panic!(),
-            };
+                    let result = $function((shell_type_a, shell_type_b), diff, basis_a, basis_b);
 
-            // copy result of this particular overlap into the total overlap matrix
-            for (i, &a) in basis_indices_a.iter().enumerate() {
-                for (j, &b) in basis_indices_b.iter().enumerate() {
-                    overlap[(a, b)] = result[(i, j)];
+                    // copy result of this particular integral into the total result matrix
+                    for (i, a) in (basis_index_start_a..basis_index_end_a).enumerate() {
+                        for (j, b) in (basis_index_start_b..basis_index_end_b).enumerate() {
+                            output[(a, b)] = result[(i, j)];
+                        }
+                    }
                 }
             }
+
+            output
         }
-    }
-
-    overlap
+    };
 }
 
-pub fn kinetic(system: &MolecularSystem) -> DMatrix<f64> {
-    todo!()
-}
-
-pub fn nuclear(system: &MolecularSystem) -> DMatrix<f64> {
-    todo!()
-}
+one_electron_integral!(overlap, overlap::compute_overlap);
+one_electron_integral!(kinetic, kinetic::compute_kinetic);
+one_electron_integral!(nuclear, nuclear::compute_nuclear);
 
 /// TODO: write electron tensor type. Or maybe ndarray?
 pub fn eri(system: &MolecularSystem) -> () {
