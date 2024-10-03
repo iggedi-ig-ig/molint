@@ -91,3 +91,4 @@ pub(super) fn coulomb_auxiliary(t: i32, u: i32, v: i32, n: i32, p: f64, diff: Ve
             }
     }
 }
+

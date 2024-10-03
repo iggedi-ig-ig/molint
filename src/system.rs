@@ -16,11 +16,23 @@ pub struct MolecularSystem {
     pub(crate) shells: Vec<Shell>,
 }
 
+impl MolecularSystem {
+    pub fn n_basis(&self) -> usize {
+        self.basis.len()
+    }
+}
+
 #[derive(Debug)]
 pub struct Shell {
     pub(crate) shell_type: ShellType,
     pub(crate) atom_index: usize,
     pub(crate) basis_indices: Vec<usize>,
+}
+
+pub struct ShellView<'a> {
+    pub(crate) shell_type: ShellType,
+    pub(crate) position: Vector3<f64>,
+    pub(crate) basis_functions: &'a [ContractedGaussian],
 }
 
 #[derive(Copy, Clone, Debug)]
