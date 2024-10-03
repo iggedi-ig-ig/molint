@@ -1,7 +1,7 @@
 #![allow(unused)]
 #![deny(unused_imports)]
 
-use crate::system::{MolecularSystem, Shell, ShellType};
+use crate::system::{MolecularSystem, ShellType};
 use nalgebra::DMatrix;
 
 mod overlap;
@@ -9,28 +9,26 @@ mod overlap;
 pub fn overlap(system: &MolecularSystem) -> DMatrix<f64> {
     let mut overlap = DMatrix::zeros(system.n_basis(), system.n_basis());
 
-    let shell = |shell: usize| {
-        let &Shell {
-            shell_type,
-            atom_index,
-            ref basis_indices,
-        } = &system.shells[shell];
+    for a in 0..system.shells.len() {
+        let (shell_type_a, pos_a, basis_indices_a) = system.shell(a);
+        let basis_a = system.shell_basis(a);
 
-        (shell_type, system.atoms[atom_index].position, basis_indices)
-    };
+        for b in a + 1..system.shells.len() {
+            let (shell_type_b, pos_b, basis_indices_b) = system.shell(b);
+            let basis_b = system.shell_basis(b);
+            let diff = pos_b - pos_a;
 
-    for i in 0..system.shells.len() {
-        let (shell_type_a, pos_a, basis_indices_a) = shell(i);
+            let result = match (shell_type_a, shell_type_b) {
+                (ShellType::S, ShellType::S) => overlap::ss_overlap(diff, &basis_a, &basis_b),
+                (ShellType::P, ShellType::P) => overlap::pp_overlap(diff, &basis_a, &basis_b),
+                (ShellType::D, ShellType::D) => overlap::dd_overlap(diff, &basis_a, &basis_b),
+                _ => panic!(),
+            };
 
-        for j in i + 1..system.shells.len() {
-            let (shell_type_b, pos_b, basis_indices_b) = shell(j);
-
-            match (shell_type_a, shell_type_b) {
-                (ShellType::S, ShellType::S) => overlap::ss_overlap(),
-                (ShellType::P, ShellType::P) => overlap::pp_overlap(),
-                (ShellType::D, ShellType::D) => overlap::dd_overlap(),
-                (a, b) => {
-                    unimplemented!("integral between shell types {a:?} and {b:?}")
+            // copy result of this particular overlap into the total overlap matrix
+            for (i, &a) in basis_indices_a.iter().enumerate() {
+                for (j, &b) in basis_indices_b.iter().enumerate() {
+                    overlap[(a, b)] = result[(i, j)];
                 }
             }
         }

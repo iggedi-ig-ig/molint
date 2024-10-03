@@ -92,3 +92,18 @@ pub(super) fn coulomb_auxiliary(t: i32, u: i32, v: i32, n: i32, p: f64, diff: Ve
     }
 }
 
+/// Normalization constant of a [GaussianPrimitive] with the given parameters
+pub(super) fn gaussian_norm(exponent: f64, angular: (i32, i32, i32)) -> f64 {
+    let (i, j, k) = angular;
+
+    (std::f64::consts::FRAC_2_PI * exponent)
+        .powi(3)
+        .sqrt()
+        .sqrt()
+        * f64::sqrt(
+            (8.0 * exponent).powi(i + j + k)
+                / ((i + 1..=2 * i).product::<i32>()
+                    * (j + 1..=2 * j).product::<i32>()
+                    * (k + 1..=2 * k).product::<i32>()) as f64,
+        )
+}

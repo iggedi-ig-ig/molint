@@ -1,6 +1,7 @@
-
-pub mod basis;
-pub mod integrals;
+mod basis;
+mod integrals;
 pub mod system;
-pub mod utils;
+mod utils;
+mod periodic_table;
 
+pub use integrals::{eri, kinetic, nuclear, overlap};
