@@ -40,7 +40,7 @@ fn gen_overlap(
     let mut result = DMatrix::zeros(count_a, count_b);
 
     // basis_a contains all basis functions that are part of shell A
-    // basis_b contains all basis functions taht are part of shell B
+    // basis_b contains all basis functions that are part of shell B
     // They may be equal to each other.
     // Now, we compute S_AB which is a block in the total overlap matrix S
     for global_a in start_a..start_a + basis_a.len() {

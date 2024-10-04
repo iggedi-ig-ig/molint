@@ -1,7 +1,7 @@
-use nalgebra::Vector3;
+use nalgebra::{Point3, Vector3};
 use ndarray::Array4;
 
-use crate::system::ShellBasis;
+use crate::{basis::ContractedGaussian, system::ShellBasis};
 
 use super::utils::{coulomb_auxiliary, hermite_expansion};
 
@@ -82,76 +82,11 @@ fn gen_eri(
                     let c = basis_c[k];
                     let d = basis_d[l];
 
-                    let mut sum = 0.0;
-
-                    let angular_a @ [l1, m1, n1] = a.angular.map(|n| n as i32);
-                    let angular_b @ [l2, m2, n2] = b.angular.map(|n| n as i32);
-                    let angular_c @ [l3, m3, n3] = c.angular.map(|n| n as i32);
-                    let angular_d @ [l4, m4, n4] = d.angular.map(|n| n as i32);
-
-                    for (coeff_a, exp_a) in a.iter() {
-                        for (coeff_b, exp_b) in b.iter() {
-                            let p = exp_a + exp_b;
-
-                            // inlined utils::product_center
-                            let product_center_ab =
-                                (exp_a * pos_a.coords + exp_b * pos_b.coords) / p;
-
-                            let e1s: Vec<_> = (0..=l1 + l2)
-                                .map(|k| hermite_expansion([l1, l2, k], diff_ab.x, exp_a, exp_b))
-                                .collect();
-                            let e2s: Vec<_> = (0..=m1 + m2)
-                                .map(|k| hermite_expansion([m1, m2, k], diff_ab.y, exp_a, exp_b))
-                                .collect();
-                            let e3s: Vec<_> = (0..=n1 + n2)
-                                .map(|k| hermite_expansion([n1, n2, k], diff_ab.z, exp_a, exp_b))
-                                .collect();
-
-                            for (coeff_c, exp_c) in c.iter() {
-                                for (coeff_d, exp_d) in d.iter() {
-                                    let q = exp_c + exp_d;
-
-                                    // inlined utils::product_center
-                                    let product_center_cd =
-                                        (exp_c * pos_c.coords + exp_d * pos_d.coords) / q;
-
-                                    let diff_product = product_center_cd - product_center_ab;
-
-                                    let e4s: Vec<_> = (0..=l3 + l4)
-                                        .map(|k| {
-                                            hermite_expansion([l3, l4, k], diff_cd.x, exp_c, exp_d)
-                                        })
-                                        .collect();
-                                    let e5s: Vec<_> = (0..=m3 + m4)
-                                        .map(|k| {
-                                            hermite_expansion([m3, m4, k], diff_cd.y, exp_c, exp_d)
-                                        })
-                                        .collect();
-                                    let e6s: Vec<_> = (0..=n3 + n4)
-                                        .map(|k| {
-                                            hermite_expansion([n3, n4, k], diff_cd.z, exp_c, exp_d)
-                                        })
-                                        .collect();
-
-                                    sum += coeff_a
-                                        * coeff_b
-                                        * coeff_c
-                                        * coeff_d
-                                        * inner_sum(
-                                            &[&e1s, &e2s, &e3s, &e4s, &e5s, &e6s],
-                                            angular_a,
-                                            angular_b,
-                                            angular_c,
-                                            angular_d,
-                                            [p, q],
-                                            diff_product,
-                                        );
-                                }
-                            }
-                        }
-                    }
-
-                    result[(i, j, k, l)] = sum;
+                    result[(i, j, k, l)] = contracted_gaussian_eri(
+                        [a, b, c, d],
+                        [pos_a, pos_b, pos_c, pos_d],
+                        [diff_ab, diff_cd],
+                    );
                 }
             }
         }
@@ -160,7 +95,75 @@ fn gen_eri(
     result
 }
 
-fn inner_sum(
+fn contracted_gaussian_eri(
+    [a, b, c, d]: [&ContractedGaussian; 4],
+    [pos_a, pos_b, pos_c, pos_d]: [Point3<f64>; 4],
+    [diff_ab, diff_cd]: [Vector3<f64>; 2],
+) -> f64 {
+    let mut sum = 0.0;
+
+    let angular_a @ [l1, m1, n1] = a.angular.map(|n| n as i32);
+    let angular_b @ [l2, m2, n2] = b.angular.map(|n| n as i32);
+    let angular_c @ [l3, m3, n3] = c.angular.map(|n| n as i32);
+    let angular_d @ [l4, m4, n4] = d.angular.map(|n| n as i32);
+
+    for (coeff_a, exp_a) in a.iter() {
+        for (coeff_b, exp_b) in b.iter() {
+            let p = exp_a + exp_b;
+
+            // inlined utils::product_center to reuse p
+            let product_center_ab = (exp_a * pos_a.coords + exp_b * pos_b.coords) / p;
+
+            let e1s: Vec<_> = (0..=l1 + l2)
+                .map(|k| hermite_expansion([l1, l2, k], diff_ab.x, exp_a, exp_b))
+                .collect();
+            let e2s: Vec<_> = (0..=m1 + m2)
+                .map(|k| hermite_expansion([m1, m2, k], diff_ab.y, exp_a, exp_b))
+                .collect();
+            let e3s: Vec<_> = (0..=n1 + n2)
+                .map(|k| hermite_expansion([n1, n2, k], diff_ab.z, exp_a, exp_b))
+                .collect();
+
+            for (coeff_c, exp_c) in c.iter() {
+                for (coeff_d, exp_d) in d.iter() {
+                    let q = exp_c + exp_d;
+
+                    // inlined utils::product_center to reuse q
+                    let product_center_cd = (exp_c * pos_c.coords + exp_d * pos_d.coords) / q;
+
+                    let diff_product = product_center_cd - product_center_ab;
+
+                    let e4s: Vec<_> = (0..=l3 + l4)
+                        .map(|k| hermite_expansion([l3, l4, k], diff_cd.x, exp_c, exp_d))
+                        .collect();
+                    let e5s: Vec<_> = (0..=m3 + m4)
+                        .map(|k| hermite_expansion([m3, m4, k], diff_cd.y, exp_c, exp_d))
+                        .collect();
+                    let e6s: Vec<_> = (0..=n3 + n4)
+                        .map(|k| hermite_expansion([n3, n4, k], diff_cd.z, exp_c, exp_d))
+                        .collect();
+
+                    sum += coeff_a
+                        * coeff_b
+                        * coeff_c
+                        * coeff_d
+                        * primitive_eri(
+                            &[&e1s, &e2s, &e3s, &e4s, &e5s, &e6s],
+                            angular_a,
+                            angular_b,
+                            angular_c,
+                            angular_d,
+                            [p, q],
+                            diff_product,
+                        );
+                }
+            }
+        }
+    }
+    sum
+}
+
+fn primitive_eri(
     expansion_coeffs: &[&[f64]],
     [l1, m1, n1]: [i32; 3],
     [l2, m2, n2]: [i32; 3],

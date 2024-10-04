@@ -74,7 +74,7 @@ pub fn nuclear(system: &MolecularSystem) -> DMatrix<f64> {
     output
 }
 
-/// TODO: write electron tensor type. Or maybe ndarray?
+// TODO: custom tensor type to save on storage (only 1/8 should be needed)
 pub fn eri(system: &MolecularSystem) -> Array4<f64> {
     let n_basis = system.basis.len();
     let n_shells = system.shells.len();
@@ -121,29 +121,4 @@ pub fn eri(system: &MolecularSystem) -> Array4<f64> {
         }
     }
     output
-}
-
-fn int_template() {
-    let (start_a, start_b) = (0, 0);
-    let (count_a, count_b) = (1, 1);
-    let (basis_a, basis_b) = ([false], [false]);
-    let mut result = DMatrix::zeros(count_a, count_b);
-
-    // TEMPLATE BELOW HERE
-
-    for global_a in start_a..start_a + basis_a.len() {
-        for global_b in global_a.max(start_b)..start_b + count_b {
-            let i = global_a - start_a;
-            let j = global_b - start_b;
-
-            let a = basis_a[i];
-            let b = basis_b[j];
-
-            let mut sum = 0.0;
-
-            result[(i, j)] = sum;
-        }
-    }
-
-    // TEMPLATE ABOVE HERE
 }

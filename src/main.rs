@@ -21,60 +21,6 @@ fn main() -> anyhow::Result<()> {
     let system = MolecularSystem::from_atoms(
         &[
             Atom {
-                ordinal: 6,
-                position: Point3::new(1.5165, 0.0, 0.0),
-            },
-            Atom {
-                ordinal: 6,
-                position: Point3::new(0.7583, 1.3134, 0.0),
-            },
-            Atom {
-                ordinal: 6,
-                position: Point3::new(-0.7583, 1.3134, 0.0),
-            },
-            Atom {
-                ordinal: 6,
-                position: Point3::new(-1.5165, 0.0, 0.0),
-            },
-            Atom {
-                ordinal: 6,
-                position: Point3::new(-0.7583, -1.3134, 0.0),
-            },
-            Atom {
-                ordinal: 6,
-                position: Point3::new(0.7583, -1.3134, 0.0),
-            },
-            Atom {
-                ordinal: 1,
-                position: Point3::new(3.0972, -1.7882, 0.0),
-            },
-            Atom {
-                ordinal: 1,
-                position: Point3::new(3.0972, 1.7882, 0.0),
-            },
-            Atom {
-                ordinal: 1,
-                position: Point3::new(0.0, 3.5763, 0.0),
-            },
-            Atom {
-                ordinal: 1,
-                position: Point3::new(-3.0972, 1.7882, 0.0),
-            },
-            Atom {
-                ordinal: 1,
-                position: Point3::new(-3.0972, -1.7882, 0.0),
-            },
-            Atom {
-                ordinal: 1,
-                position: Point3::new(0.0, -3.5763, 0.0),
-            },
-        ],
-        &basis_set,
-    );
-    
-    let system = MolecularSystem::from_atoms(
-        &[
-            Atom {
                 ordinal: 1,
                 position: Point3::origin(),
             },
