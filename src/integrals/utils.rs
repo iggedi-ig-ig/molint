@@ -1,5 +1,6 @@
 //! Module for helper functions thate are used for different types of integralsc
-use nalgebra::Vector3;
+
+use nalgebra::{Point3, Vector3};
 
 /// Returns the hermite expansion coefficients as commonly used in molecular integrals
 ///
@@ -57,4 +58,14 @@ pub(super) fn coulomb_auxiliary(t: i32, u: i32, v: i32, n: i32, p: f64, diff: Ve
                 0.0
             }
     }
+}
+
+/// Retruns the product center of two gaussians with the given positions and exponents
+pub(super) fn product_center(
+    exp_a: f64,
+    pos_a: Point3<f64>,
+    exp_b: f64,
+    pos_b: Point3<f64>,
+) -> Point3<f64> {
+    Point3::from((exp_a * pos_a.coords + exp_b * pos_b.coords) / (exp_a + exp_b))
 }

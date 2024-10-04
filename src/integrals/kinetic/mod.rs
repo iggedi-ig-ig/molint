@@ -45,8 +45,6 @@ fn gen_kinetic(
             let i = global_a - start_a;
             let j = global_b - start_b;
 
-            dbg!((i, j), (global_a, global_b));
-
             let a = basis_a[i];
             let b = basis_b[j];
 
