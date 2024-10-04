@@ -4,9 +4,11 @@ mod ss;
 
 use nalgebra::DMatrix;
 
-use crate::{system::ShellBasis, utils};
+use crate::system::ShellBasis;
 
-/// Generic function to compute the overlap between two electron shells
+use super::utils::hermite_expansion;
+
+/// Function to compute the overlap integrals between two electron shells of arbitrary type
 pub(crate) fn compute_overlap(
     basis_a @ ShellBasis {
         shell_type: type_a, ..
@@ -18,7 +20,7 @@ pub(crate) fn compute_overlap(
     // TODO(perf): some combinations of shell types can be simplifed. There are already modules for some
     // of them which are left out
     match (type_a, type_b) {
-        shell_types => gen_overlap(basis_a, basis_b),
+        _ => gen_overlap(basis_a, basis_b),
     }
 }
 
@@ -48,6 +50,40 @@ fn gen_overlap(
     // basis_b contains all basis functions taht are part of shell B
     // They may be equal to each other.
     // Now, we compute S_AB which is a block in the total overlap matrix S
+    for global_a in start_a..start_a + basis_a.len() {
+        // We only want to compute overlaps S_ij where i <= j (as S_ij = S_ji).
+        // In this case, this means that we only want to compute S_ab
+        // if global_a <= global_b, meaning we can start the loop at
+        // *at least* global_a (but at start_b if start_b > global_a)
+        for global_b in global_a.max(start_b)..start_b + count_b {
+            let i = global_a - start_a;
+            let j = global_b - start_b;
+
+            let a = basis_a[i];
+            let b = basis_b[j];
+
+            let mut sum = 0.0;
+
+            let [l1, m1, n1] = a.angular.map(|n| n as i32);
+            let [l2, m2, n2] = a.angular.map(|n| n as i32);
+
+            for (coeff_a, exp_a) in a.iter() {
+                for (coeff_b, exp_b) in b.iter() {
+                    let p = exp_a + exp_b;
+                    let q = exp_a * exp_b / p;
+
+                    sum += coeff_a
+                        * coeff_b
+                        * hermite_expansion([l1, l2, 0], diff.x, exp_a, exp_b)
+                        * hermite_expansion([m1, m2, 0], diff.y, exp_a, exp_b)
+                        * hermite_expansion([n1, n2, 0], diff.z, exp_a, exp_b)
+                        * (std::f64::consts::PI / (exp_a + exp_b)).powi(3).sqrt()
+                }
+            }
+
+            result[(i, j)] = sum;
+        }
+    }
     for (i, a) in basis_a.iter().enumerate() {
         let global_index_a = start_a + i;
 
@@ -64,27 +100,6 @@ fn gen_overlap(
             if global_index_b < global_index_a {
                 continue;
             }
-
-            let mut sum = 0.0;
-
-            let [l1, m1, n1] = a.angular.map(|n| n as i32);
-            let [l2, m2, n2] = a.angular.map(|n| n as i32);
-
-            for (coeff_a, exp_a) in a.iter() {
-                for (coeff_b, exp_b) in b.iter() {
-                    let p = exp_a + exp_b;
-                    let q = exp_a * exp_b / p;
-
-                    sum += coeff_a
-                        * coeff_b
-                        * utils::hermite_expansion([l1, l2, 0], diff.x, exp_a, exp_b)
-                        * utils::hermite_expansion([m1, m2, 0], diff.y, exp_a, exp_b)
-                        * utils::hermite_expansion([n1, n2, 0], diff.z, exp_a, exp_b)
-                        * (std::f64::consts::PI / (exp_a + exp_b)).powi(3).sqrt()
-                }
-            }
-
-            result[(i, j)] = sum;
         }
     }
     result

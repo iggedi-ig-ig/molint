@@ -5,6 +5,7 @@ mod eri;
 mod kinetic;
 mod nuclear;
 mod overlap;
+mod utils;
 
 macro_rules! one_electron_integral {
     ($name:ident, $function:path) => {

@@ -7,7 +7,6 @@ mod integrals;
 mod periodic_table;
 pub mod system;
 pub mod types;
-mod utils;
 
 use basis::BasisSet;
 pub use integrals::{eri, kinetic, nuclear, overlap};

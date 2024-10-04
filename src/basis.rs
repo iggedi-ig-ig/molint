@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs::File, path::Path};
 
 use serde::Deserialize;
 
-use crate::{periodic_table::ElementType, system::Atom, utils};
+use crate::{periodic_table::ElementType, system::Atom};
 
 /// Data associated with a contracted gaussian. stored as a struct of lists.
 // TODO(perf): SmallVec (or even complete stack storage?)
@@ -12,7 +12,6 @@ pub struct ContractedGaussian {
     pub exponents: Vec<f64>,
     pub angular: [u32; 3],
 }
-
 
 impl ContractedGaussian {
     pub(crate) fn iter(&self) -> impl Iterator<Item = (f64, f64)> + '_ {
@@ -92,7 +91,7 @@ impl TryFrom<BseBasisSet> for BasisSet {
                             let exponent = exponent.parse::<f64>()?;
                             let coefficient = coefficient.parse::<f64>()?;
 
-                            let norm = utils::gaussian_norm(exponent, angular);
+                            let norm = gaussian_norm(exponent, angular);
 
                             exponents.push(exponent);
                             coefficients.push(norm * coefficient);
@@ -129,4 +128,20 @@ fn generate_angular_vectors(angular_magnitude: i32) -> Vec<(i32, i32, i32)> {
     }
 
     angular_vectors
+}
+
+/// Normalization constant of a [GaussianPrimitive] with the given parameters
+fn gaussian_norm(exponent: f64, angular: (i32, i32, i32)) -> f64 {
+    let (i, j, k) = angular;
+
+    (std::f64::consts::FRAC_2_PI * exponent)
+        .powi(3)
+        .sqrt()
+        .sqrt()
+        * f64::sqrt(
+            (8.0 * exponent).powi(i + j + k)
+                / ((i + 1..=2 * i).product::<i32>()
+                    * (j + 1..=2 * j).product::<i32>()
+                    * (k + 1..=2 * k).product::<i32>()) as f64,
+        )
 }

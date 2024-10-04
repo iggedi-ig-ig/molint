@@ -3,6 +3,9 @@ name = "molint"
 version = "0.1.0"
 edition = "2021"
 
+[profile.dev]
+opt-level = 3
+
 [dependencies]
 anyhow = "1.0.89"
 boys = "0.1.0"
