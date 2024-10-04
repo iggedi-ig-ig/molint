@@ -46,6 +46,8 @@ fn gen_kinetic(
             let i = global_a - start_a;
             let j = global_b - start_b;
 
+            dbg!((i, j), (global_a, global_b));
+
             let a = basis_a[i];
             let b = basis_b[j];
 
@@ -67,11 +69,8 @@ fn gen_kinetic(
                         )
                     };
 
-                    // TODO(perf): maybe some of the overlap / angular step calculations can be
-                    // factored out?
                     let term0 = exp_b
-                        * 2.0
-                        * (l2 + m2 + n2 + 3) as f64
+                        * (2.0 * type_b.magnitude() as f64 + 3.0)
                         * primitive_overlap(exp_a, exp_b, (l1, m1, n1), (l2, m2, n2), diff);
                     let term1 = -2.0
                         * exp_b.powi(2)

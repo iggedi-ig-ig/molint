@@ -1,14 +1,15 @@
 use crate::system::{MolecularSystem, ShellBasis};
 use nalgebra::DMatrix;
 
+// TODO(perf): for all integrals, think about row / column majorness of matrices
+//  (and the effects indexing order has on performance based on that)
 mod eri;
 mod kinetic;
 mod nuclear;
 mod overlap;
 mod utils;
 
-// TODO(perf): for all integrals, think about row / column majorness of matrices
-//  (and the effects indexing order has on performance based on that)
+// TODO(style): probably remove this macro
 macro_rules! one_electron_integral {
     ($name:ident, $function:path) => {
         pub fn $name(system: &MolecularSystem) -> DMatrix<f64> {
@@ -46,7 +47,31 @@ macro_rules! one_electron_integral {
 
 one_electron_integral!(overlap, overlap::compute_overlap);
 one_electron_integral!(kinetic, kinetic::compute_kinetic);
-one_electron_integral!(nuclear, nuclear::compute_nuclear);
+
+pub fn nuclear(system: &MolecularSystem) -> DMatrix<f64> {
+    let mut output = DMatrix::zeros(system.n_basis(), system.n_basis());
+    for a in 0..system.shells.len() {
+        let basis_a @ ShellBasis {
+            start_index: start_a,
+            count: count_a,
+            ..
+        } = system.shell_basis(a);
+        for b in a..system.shells.len() {
+            let basis_b @ ShellBasis {
+                start_index: start_b,
+                count: count_b,
+                ..
+            } = system.shell_basis(b);
+            let result = nuclear::compute_nuclear(basis_a, basis_b, system);
+            for (i, a) in (start_a..start_a + count_a).enumerate() {
+                for (j, b) in (start_b..start_b + count_b).enumerate() {
+                    output[(a, b)] = result[(i, j)];
+                }
+            }
+        }
+    }
+    output
+}
 
 /// TODO: write electron tensor type. Or maybe ndarray?
 pub fn eri(system: &MolecularSystem) -> () {
