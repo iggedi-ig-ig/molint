@@ -1,12 +1,7 @@
-use nalgebra::{DMatrix, Vector3};
+use nalgebra::DMatrix;
 
-use crate::{basis::ContractedGaussian, system::ShellType};
+use crate::system::ShellBasis;
 
-pub fn compute_nuclear(
-    (shell_a, shell_b): (ShellType, ShellType),
-    diff: Vector3<f64>,
-    basis_a: &[&ContractedGaussian],
-    basis_b: &[&ContractedGaussian],
-) -> DMatrix<f64> {
+pub fn compute_nuclear(basis_a: ShellBasis, basis_b: ShellBasis) -> DMatrix<f64> {
     todo!()
 }

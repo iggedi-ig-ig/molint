@@ -1,4 +1,4 @@
-use crate::system::MolecularSystem;
+use crate::system::{MolecularSystem, ShellBasis};
 use nalgebra::DMatrix;
 
 mod eri;
@@ -12,25 +12,24 @@ macro_rules! one_electron_integral {
             let mut output = DMatrix::zeros(system.n_basis(), system.n_basis());
 
             for a in 0..system.shells.len() {
-                let (shell_type_a, pos_a, (basis_index_start_a, basis_size_a)) = system.shell(a);
-                let basis_a = system.shell_basis(a);
+                let basis_a @ ShellBasis {
+                    start_index: start_a,
+                    count: count_a,
+                    ..
+                } = system.shell_basis(a);
 
                 for b in a..system.shells.len() {
-                    let (shell_type_b, pos_b, (basis_index_start_b, basis_size_b)) =
-                        system.shell(b);
+                    let basis_b @ ShellBasis {
+                        start_index: start_b,
+                        count: count_b,
+                        ..
+                    } = system.shell_basis(b);
 
-                    let basis_b = system.shell_basis(b);
-                    let diff = pos_b - pos_a;
-
-                    let result = $function((shell_type_a, shell_type_b), diff, basis_a, basis_b);
+                    let result = $function(basis_a, basis_b);
 
                     // copy result of this particular integral into the total result matrix
-                    for (i, a) in
-                        (basis_index_start_a..basis_index_start_a + basis_size_a).enumerate()
-                    {
-                        for (j, b) in
-                            (basis_index_start_b..basis_index_start_b + basis_size_b).enumerate()
-                        {
+                    for (i, a) in (start_a..start_a + count_a).enumerate() {
+                        for (j, b) in (start_b..start_b + count_b).enumerate() {
                             output[(a, b)] = result[(i, j)];
                         }
                     }

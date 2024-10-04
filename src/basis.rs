@@ -5,12 +5,14 @@ use serde::Deserialize;
 use crate::{periodic_table::ElementType, system::Atom, utils};
 
 /// Data associated with a contracted gaussian. stored as a struct of lists.
-#[derive(Clone, Debug, PartialEq)]
+// TODO(perf): SmallVec (or even complete stack storage?)
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct ContractedGaussian {
     pub coefficients: Vec<f64>,
     pub exponents: Vec<f64>,
     pub angular: [u32; 3],
 }
+
 
 impl ContractedGaussian {
     pub(crate) fn iter(&self) -> impl Iterator<Item = (f64, f64)> + '_ {

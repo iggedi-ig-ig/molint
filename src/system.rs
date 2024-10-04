@@ -19,6 +19,21 @@ pub struct MolecularSystem<'b> {
     pub(crate) shells: Vec<Shell>,
 }
 
+/// Represents the basis of a specific shell in the basis of some molecular system.
+/// It's sort of a view into the molecular system, indexed by [Shell].
+// TODO(style): should this even store shell_type? because it can technically be deduced from the
+//  angular terms of the contracted gaussians. Or maybe contracted gaussians shouldn't even store
+//  their angular terms, because they can be deduced from the shell type? This might also reduce
+//  memory usage
+#[derive(Copy, Clone, Debug)]
+pub(crate) struct ShellBasis<'b> {
+    pub(crate) shell_type: ShellType,
+    pub(crate) center: Point3<f64>,
+    pub(crate) basis: &'b [&'b ContractedGaussian],
+    pub(crate) start_index: usize,
+    pub(crate) count: usize,
+}
+
 impl<'b> MolecularSystem<'b> {
     /// Create a molecular system given the atom types and positons and a basis set.
     /// The basis set must outlive this object.
@@ -70,35 +85,22 @@ impl<'b> MolecularSystem<'b> {
         self.basis.len()
     }
 
-    /// Get the data of a single shell
-    pub(crate) fn shell(&self, shell_index: usize) -> (ShellType, Point3<f64>, (usize, usize)) {
-        let &Shell {
+    /// Get the concrete shell basis of a shell in this system  
+    pub(crate) fn shell_basis<'a>(&'a self, shell_index: usize) -> ShellBasis {
+        let Shell {
             shell_type,
             atom_index,
             basis_start_index,
             basis_size,
-        } = &self.shells[shell_index];
-
-        (
-            shell_type,
-            self.atoms[atom_index].position,
-            (basis_start_index, basis_size),
-        )
-    }
-
-    /// Get the basis functions that are referenced by a shell
-    pub(crate) fn shell_basis<'a>(&'a self, shell_index: usize) -> &[&ContractedGaussian] {
-        // TODO: we are cloning here. There are multiple ways of going about avoiding this clone.
-        //  The one I have in mind is to sort ContractedGaussians such that Shells only have to
-        //  store a start- and end index. Then, slice indices can be used instead of collecting a
-        //  vec (because in the end, we want a &[ContractedGaussiasn] anyway)
-
-        let Shell {
-            basis_start_index,
-            basis_size,
-            ..
         } = self.shells[shell_index];
-        &self.basis[basis_start_index..basis_start_index + basis_size]
+
+        ShellBasis {
+            shell_type,
+            center: self.atoms[atom_index].position,
+            basis: &self.basis[basis_start_index..basis_start_index + basis_size],
+            start_index: basis_start_index,
+            count: basis_size,
+        }
     }
 }
 
