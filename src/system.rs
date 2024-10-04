@@ -73,6 +73,8 @@ impl<'b> MolecularSystem<'b> {
             );
         }
 
+        log::info!("loaded molecular system with {} atoms and {} basis functions, which were decomposed into {} shells", atoms.len(), basis.len(), shells.len());
+
         Self {
             atoms: atoms.to_vec(),
             basis,

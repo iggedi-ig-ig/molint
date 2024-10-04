@@ -69,7 +69,11 @@ impl TryFrom<BseBasisSet> for BasisSet {
 
             for electron_shell in &configuration.electron_shells {
                 if electron_shell.function_type != "gto" {
-                    log::warn!("skipping function type {}", electron_shell.function_type);
+                    log::warn!(
+                        "kipping function type {} on element {:?}",
+                        electron_shell.function_type,
+                        element
+                    );
                     continue;
                 }
 
