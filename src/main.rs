@@ -17,7 +17,7 @@ use system::{Atom, MolecularSystem};
 fn main() -> anyhow::Result<()> {
     pretty_env_logger::init();
 
-    let basis_set: BasisSet = BasisSet::load("data/basis/STO-3G.json")?;
+    let basis_set: BasisSet = BasisSet::load("data/basis/6-31G.json")?;
     let system = MolecularSystem::from_atoms(
         &[
             Atom {
@@ -71,6 +71,7 @@ fn main() -> anyhow::Result<()> {
         ],
         &basis_set,
     );
+    
     let system = MolecularSystem::from_atoms(
         &[
             Atom {
