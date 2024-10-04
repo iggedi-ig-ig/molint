@@ -12,18 +12,20 @@ pub struct Atom {
 }
 
 #[derive(Debug)]
-pub struct MolecularSystem {
+/// Represents the quantum system of a molecule.
+pub struct MolecularSystem<'b> {
     pub atoms: Vec<Atom>,
-    pub basis: Vec<ContractedGaussian>,
+    pub basis: Vec<&'b ContractedGaussian>,
     pub(crate) shells: Vec<Shell>,
-    // pub charge: i32,
-    // pub spin_multiplicity: i32,
 }
 
-impl MolecularSystem {
-    pub fn from_atoms(atoms: &[Atom], basis_set: &BasisSet) -> Self {
+impl<'b> MolecularSystem<'b> {
+    /// Create a molecular system given the atom types and positons and a basis set.
+    /// The basis set must outlive this object.
+    pub fn from_atoms(atoms: &[Atom], basis_set: &'b BasisSet) -> Self {
         let mut shell_map = HashMap::new();
 
+        // collect basis functions based on shells
         for (i, atom) in atoms.into_iter().enumerate() {
             let atomic_basis = basis_set.atomic_basis(atom);
 
@@ -41,13 +43,20 @@ impl MolecularSystem {
         for ((atom_index, [i, j, k]), basis_functions) in shell_map {
             let angular_magnitude = i + j + k;
 
-            shells.push(Shell {
+            let shell = Shell {
                 shell_type: ShellType::from_angular(angular_magnitude),
                 atom_index,
                 basis_start_index: basis.len(),
-                basis_end_index: basis.len() + basis_functions.len(),
-            });
-            basis.extend(basis_functions.into_iter().cloned());
+                basis_size: basis_functions.len(),
+            };
+            shells.push(shell);
+            basis.extend_from_slice(&basis_functions);
+
+            // invariant: basis[start_index..start_index+size] == basis_functions
+            assert_eq!(
+                &basis_functions,
+                &basis[shell.basis_start_index..shell.basis_start_index + shell.basis_size],
+            );
         }
 
         Self {
@@ -67,18 +76,18 @@ impl MolecularSystem {
             shell_type,
             atom_index,
             basis_start_index,
-            basis_end_index,
+            basis_size,
         } = &self.shells[shell_index];
 
         (
             shell_type,
             self.atoms[atom_index].position,
-            (basis_start_index, basis_end_index),
+            (basis_start_index, basis_size),
         )
     }
 
     /// Get the basis functions that are referenced by a shell
-    pub(crate) fn shell_basis<'a>(&'a self, shell_index: usize) -> &[ContractedGaussian] {
+    pub(crate) fn shell_basis<'a>(&'a self, shell_index: usize) -> &[&ContractedGaussian] {
         // TODO: we are cloning here. There are multiple ways of going about avoiding this clone.
         //  The one I have in mind is to sort ContractedGaussians such that Shells only have to
         //  store a start- and end index. Then, slice indices can be used instead of collecting a
@@ -86,19 +95,22 @@ impl MolecularSystem {
 
         let Shell {
             basis_start_index,
-            basis_end_index,
+            basis_size,
             ..
         } = self.shells[shell_index];
-        &self.basis[basis_start_index..basis_end_index]
+        &self.basis[basis_start_index..basis_start_index + basis_size]
     }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Shell {
     pub(crate) shell_type: ShellType,
     pub(crate) atom_index: usize,
+    /// where in the list of basis functions does this shell "start" (i.e., where is the first of
+    /// this shells basis functions in that list)
     basis_start_index: usize,
-    basis_end_index: usize,
+    /// how many basis functions does this shell contain
+    basis_size: usize,
 }
 
 #[derive(Copy, Clone, Debug)]

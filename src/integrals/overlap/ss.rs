@@ -4,8 +4,8 @@ use crate::basis::ContractedGaussian;
 
 pub(crate) fn ss_overlap(
     diff: Vector3<f64>,
-    basis_a: &[ContractedGaussian],
-    basis_b: &[ContractedGaussian],
+    basis_a: &[&ContractedGaussian],
+    basis_b: &[&ContractedGaussian],
 ) -> DMatrix<f64> {
     let length_squared = diff.norm_squared();
 
@@ -15,7 +15,7 @@ pub(crate) fn ss_overlap(
     for (i, a) in basis_a.iter().enumerate() {
         // TODO: Is symmetry exploitable here aswell? it feels like that should be the case, but
         // I am way too unsure to just do it lol
-        for (j, b) in basis_b.iter().enumerate() {
+        for (j, b) in basis_b.iter().enumerate().skip(i.saturating_sub(1)) {
             // here, we are iterating through pairs of _basis functions_, not primitives.
             // This means that each inner loop here has a unique result which we are interested in
 

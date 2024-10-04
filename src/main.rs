@@ -16,7 +16,7 @@ use system::{Atom, MolecularSystem};
 
 // TODO: rename file to lib.rs and remove main.rs
 fn main() -> anyhow::Result<()> {
-    let basis_set: BasisSet = BasisSet::load("data/basis/STO-3G.json")?;
+    let basis_set: BasisSet = BasisSet::load("data/basis/6-31G_st.json")?;
 
     let system = MolecularSystem::from_atoms(
         &[
@@ -26,12 +26,12 @@ fn main() -> anyhow::Result<()> {
             },
             Atom {
                 ordinal: 1,
-                position: Point3::origin() + Vector3::x() * 1.2,
+                position: Point3::origin() + Vector3::z() * 1.4,
             },
         ],
         &basis_set,
     );
 
-    println!("{}", overlap(&system));
+    println!("{:0.4}", overlap(&system));
     Ok(())
 }

@@ -17,8 +17,8 @@ fn hermite_pp([i, j]: [i32; 2], dist: f64, a: f64, b: f64) -> f64 {
 
 pub(super) fn pp_overlap(
     diff: Vector3<f64>,
-    basis_a: &[ContractedGaussian],
-    basis_b: &[ContractedGaussian],
+    basis_a: &[&ContractedGaussian],
+    basis_b: &[&ContractedGaussian],
 ) -> DMatrix<f64> {
     // Use a matrix to organize results. result[(i, j)] = S_ij
     let mut result = DMatrix::zeros(basis_a.len(), basis_b.len());

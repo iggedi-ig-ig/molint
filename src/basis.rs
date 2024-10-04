@@ -5,7 +5,7 @@ use serde::Deserialize;
 use crate::{periodic_table::ElementType, system::Atom, utils};
 
 /// Data associated with a contracted gaussian. stored as a struct of lists.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ContractedGaussian {
     pub coefficients: Vec<f64>,
     pub exponents: Vec<f64>,

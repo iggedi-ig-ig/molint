@@ -14,8 +14,8 @@ use crate::{basis::ContractedGaussian, system::ShellType, utils};
 pub(crate) fn compute_overlap(
     shell_types: (ShellType, ShellType),
     diff: Vector3<f64>,
-    basis_a: &[ContractedGaussian],
-    basis_b: &[ContractedGaussian],
+    basis_a: &[&ContractedGaussian],
+    basis_b: &[&ContractedGaussian],
 ) -> DMatrix<f64> {
     // TODO: are there other combinations that simplify the calculation?
     match shell_types {
@@ -30,8 +30,8 @@ pub(crate) fn compute_overlap(
 fn gen_overlap(
     shell_types: (ShellType, ShellType),
     diff: Vector3<f64>,
-    basis_a: &[ContractedGaussian],
-    basis_b: &[ContractedGaussian],
+    basis_a: &[&ContractedGaussian],
+    basis_b: &[&ContractedGaussian],
 ) -> DMatrix<f64> {
     // Use a matrix to organize results. result[(i, j)] = S_ij
     let mut result = DMatrix::zeros(basis_a.len(), basis_b.len());
