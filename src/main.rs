@@ -32,5 +32,6 @@ fn main() -> anyhow::Result<()> {
     );
 
     println!("{:0.4}", overlap(&system));
+    println!("{:0.4}", kinetic(&system));
     Ok(())
 }

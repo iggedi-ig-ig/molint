@@ -84,23 +84,5 @@ fn gen_overlap(
             result[(i, j)] = sum;
         }
     }
-    for (i, a) in basis_a.iter().enumerate() {
-        let global_index_a = start_a + i;
-
-        for (j, b) in basis_b.iter().enumerate() {
-            let global_index_b = start_b + j;
-
-            // we only want to compute overlaps between basis functions k and l if k <= l
-            // (because S_kl = S_lk) which in this case means we must ensure that
-
-            // here, we are iterating through pairs of _basis functions_, not primitives.
-            // This means that each inner loop here has a unique result which we are interested in.
-            // k and l are global_index_a and global_index_b respectively.
-            // thus:
-            if global_index_b < global_index_a {
-                continue;
-            }
-        }
-    }
     result
 }

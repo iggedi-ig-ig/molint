@@ -1,4 +1,4 @@
-use nalgebra::DMatrix;
+use nalgebra::{DMatrix, Vector3};
 
 use crate::{integrals::utils::hermite_expansion, system::ShellBasis};
 
@@ -39,35 +39,49 @@ fn gen_kinetic(
 
     let mut result = DMatrix::zeros(count_a, count_b);
 
-    let angular_magnitude_1 = type_a.magnitude();
-    let angular_magnitude_2 = type_b.magnitude();
-
-    // there unfortunately just aren't nice names for coeffients like these :/
-    let overlap_coeffient = 2.0 * angular_magnitude_2 as f64;
-
-    let overlaps_1d = ();
+    // this neseted loop is weird - for better explanation, see the comments in gen_overlap in
+    // 'integrals/overlap/mod.rs'
     for global_a in start_a..start_a + basis_a.len() {
-        let start_j = global_a.max(start_b);
-        for global_b in start_j..start_b + count_b {
-            let a = basis_a[global_a - start_a];
-            let b = basis_b[global_b - start_b];
-        }
-    }
+        for global_b in global_a.max(start_b)..start_b + count_b {
+            let i = global_a - start_a;
+            let j = global_b - start_b;
 
-    for (i, a) in basis_a.iter().enumerate() {
-        let global_index_a = start_a + i;
-        for (j, b) in basis_b.iter().enumerate() {
-            let global_index_b = start_b + j;
+            let a = basis_a[i];
+            let b = basis_b[j];
 
-            if global_index_b < global_index_a {
-                continue;
-            }
+            let [l1, m1, n1] = a.angular.map(|n| n as i32);
+            let [l2, m2, n2] = b.angular.map(|n| n as i32);
 
             let mut sum = 0.0;
 
             for (coeff_a, exp_a) in a.iter() {
                 for (coeff_b, exp_b) in b.iter() {
-                    let term_b = exp_b * 2.0 * angular_magnitude_2 as f64;
+                    // don't know a good name to call this
+                    let angular_step = |i: i32, j: i32, k: i32| {
+                        primitive_overlap(
+                            exp_a,
+                            exp_b,
+                            (l1, m1, n1),
+                            (l2 + i, m2 + j, n2 + k),
+                            diff,
+                        )
+                    };
+
+                    // TODO(perf): maybe some of the overlap / angular step calculations can be
+                    // factored out?
+                    let term0 = exp_b
+                        * 2.0
+                        * (l2 + m2 + n2 + 3) as f64
+                        * primitive_overlap(exp_a, exp_b, (l1, m1, n1), (l2, m2, n2), diff);
+                    let term1 = -2.0
+                        * exp_b.powi(2)
+                        * (angular_step(2, 0, 0) + angular_step(0, 2, 0) + angular_step(0, 0, 2));
+                    let term2 = -0.5
+                        * ((l2 * (l2 - 1)) as f64 * angular_step(-2, 0, 0)
+                            + (m2 * (m2 - 1)) as f64 * angular_step(0, -2, 0)
+                            + (n2 * (n2 - 1)) as f64 * angular_step(0, 0, -2));
+
+                    sum += coeff_a * coeff_b * (term0 + term1 + term2);
                 }
             }
 
@@ -78,7 +92,15 @@ fn gen_kinetic(
     result
 }
 
-// unnormalized overlap between two 1d hermite gaussians
-fn overlap_1d(exp_a: f64, exp_b: f64, l_a: i32, l_b: i32, d: f64) -> f64 {
-    hermite_expansion([l_a, l_b, 0], d, exp_a, exp_b)
+fn primitive_overlap(
+    exp_a: f64,
+    exp_b: f64,
+    (l1, m1, n1): (i32, i32, i32),
+    (l2, m2, n2): (i32, i32, i32),
+    diff: Vector3<f64>,
+) -> f64 {
+    (std::f64::consts::PI / (exp_a + exp_b)).powi(3).sqrt()
+        * hermite_expansion([l1, l2, 0], diff.x, exp_a, exp_b)
+        * hermite_expansion([m1, m2, 0], diff.y, exp_a, exp_b)
+        * hermite_expansion([n1, n2, 0], diff.z, exp_a, exp_b)
 }
