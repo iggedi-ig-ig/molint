@@ -21,10 +21,11 @@ pub struct MolecularSystem<'b> {
 
 /// Represents the basis of a specific shell in the basis of some molecular system.
 /// It's sort of a view into the molecular system, indexed by [Shell].
+//
 // TODO(style): should this even store shell_type? because it can technically be deduced from the
 //  angular terms of the contracted gaussians. Or maybe contracted gaussians shouldn't even store
-//  their angular terms, because they can be deduced from the shell type? This might also reduce
-//  memory usage
+//  their angular terms, because they are implied by the shell type? This might also reduce memory
+//  usage
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct ShellBasis<'b> {
     pub(crate) shell_type: ShellType,
@@ -59,7 +60,7 @@ impl<'b> MolecularSystem<'b> {
             let angular_magnitude = i + j + k;
 
             let shell = Shell {
-                shell_type: ShellType::from_angular(angular_magnitude),
+                shell_type: ShellType(angular_magnitude),
                 atom_index,
                 basis_start_index: basis.len(),
                 basis_size: basis_functions.len(),
@@ -115,42 +116,5 @@ pub struct Shell {
     basis_size: usize,
 }
 
-#[derive(Copy, Clone, Debug)]
-pub enum ShellType {
-    /// 0
-    S,
-    /// 1
-    P,
-    /// 2
-    D,
-    /// 3
-    F,
-    /// 4
-    G,
-    /// n
-    N(u32),
-}
-
-impl ShellType {
-    pub fn from_angular(i: u32) -> Self {
-        match i {
-            0 => Self::S,
-            1 => Self::P,
-            2 => Self::D,
-            3 => Self::F,
-            4 => Self::G,
-            n => Self::N(n),
-        }
-    }
-
-    pub fn angular(&self) -> u32 {
-        match *self {
-            Self::S => 0,
-            Self::P => 1,
-            Self::D => 2,
-            Self::F => 3,
-            Self::G => 4,
-            Self::N(n) => n,
-        }
-    }
-}
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ShellType(u32);
