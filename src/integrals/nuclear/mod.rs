@@ -11,11 +11,8 @@ pub(crate) fn compute_nuclear(
     }: ShellBasis,
     system: &MolecularSystem,
 ) -> DMatrix<f64> {
-    // TODO(perf): some combinations of shell types can be simplifed. There are already modules for some
-    // of them which are left out
-    match (type_a, type_b) {
-        _ => gen_nuclear(basis_a, basis_b, system),
-    }
+    // TODO(perf): specific implementations for simple shell types
+    gen_nuclear(basis_a, basis_b, system)
 }
 
 fn gen_nuclear(

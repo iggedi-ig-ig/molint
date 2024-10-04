@@ -74,7 +74,7 @@ pub fn nuclear(system: &MolecularSystem) -> DMatrix<f64> {
 }
 
 /// TODO: write electron tensor type. Or maybe ndarray?
-pub fn eri(system: &MolecularSystem) -> () {
+pub fn eri(system: &MolecularSystem) {
     todo!()
 }
 

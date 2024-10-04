@@ -10,6 +10,6 @@ pub(crate) fn compute_electron_repulsion(
     basis_b: &[ContractedGaussian],
     basis_c: &[ContractedGaussian],
     basis_d: &[ContractedGaussian],
-) -> () {
+) {
     todo!()
 }

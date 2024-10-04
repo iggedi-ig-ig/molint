@@ -1,7 +1,3 @@
-mod dd;
-mod pp;
-mod ss;
-
 use nalgebra::DMatrix;
 
 use crate::system::ShellBasis;
@@ -17,11 +13,8 @@ pub(crate) fn compute_overlap(
         shell_type: type_b, ..
     }: ShellBasis,
 ) -> DMatrix<f64> {
-    // TODO(perf): some combinations of shell types can be simplifed. There are already modules for some
-    // of them which are left out
-    match (type_a, type_b) {
-        _ => gen_overlap(basis_a, basis_b),
-    }
+    // TODO(perf): specific implementations for simple shell types
+    gen_overlap(basis_a, basis_b)
 }
 
 /// Generic overlap integral between two electron shells.

@@ -11,9 +11,8 @@ pub(crate) fn compute_kinetic(
         shell_type: type_b, ..
     }: ShellBasis,
 ) -> DMatrix<f64> {
-    match (type_a, type_b) {
-        _ => gen_kinetic(basis_a, basis_b),
-    }
+    // TODO(perf): specific implementations for simple shell types
+    gen_kinetic(basis_a, basis_b)
 }
 
 fn gen_kinetic(

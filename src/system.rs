@@ -42,7 +42,7 @@ impl<'b> MolecularSystem<'b> {
         let mut shell_map = HashMap::new();
 
         // collect basis functions based on shells
-        for (i, atom) in atoms.into_iter().enumerate() {
+        for (i, atom) in atoms.iter().enumerate() {
             let atomic_basis = basis_set.atomic_basis(atom);
 
             for basis_function in atomic_basis {
@@ -87,7 +87,7 @@ impl<'b> MolecularSystem<'b> {
     }
 
     /// Get the concrete shell basis of a shell in this system  
-    pub(crate) fn shell_basis<'a>(&'a self, shell_index: usize) -> ShellBasis {
+    pub(crate) fn shell_basis(&self, shell_index: usize) -> ShellBasis {
         let Shell {
             shell_type,
             atom_index,
