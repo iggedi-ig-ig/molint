@@ -143,8 +143,7 @@ fn gen_eri(
                                             angular_b,
                                             angular_c,
                                             angular_d,
-                                            p,
-                                            q,
+                                            [p, q],
                                             diff_product,
                                         );
                                 }
@@ -167,8 +166,7 @@ fn inner_sum(
     [l2, m2, n2]: [i32; 3],
     [l3, m3, n3]: [i32; 3],
     [l4, m4, n4]: [i32; 3],
-    p: f64,
-    q: f64,
+    [p, q]: [f64; 2],
     diff_product: Vector3<f64>,
 ) -> f64 {
     let alpha = p * q / (p + q);
