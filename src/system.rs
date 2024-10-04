@@ -22,10 +22,8 @@ pub struct MolecularSystem<'b> {
 /// Represents the basis of a specific shell in the basis of some molecular system.
 /// It's sort of a view into the molecular system, indexed by [Shell].
 //
-// TODO(style): should this even store shell_type? because it can technically be deduced from the
-//  angular terms of the contracted gaussians. Or maybe contracted gaussians shouldn't even store
-//  their angular terms, because they are implied by the shell type? This might also reduce memory
-//  usage
+// TODO(style): shell_type and the angular term of contracted gaussians technically imply each
+//  other, so it's not technically necessary to store both.
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct ShellBasis<'b> {
     pub(crate) shell_type: ShellType,

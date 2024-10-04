@@ -57,13 +57,13 @@ struct BseElectronShell {
 }
 
 impl TryFrom<BseBasisSet> for BasisSet {
-    // TODO: use a "better" type for error
+    // TODO(style): use a "better" type for error
     type Error = anyhow::Error;
 
     fn try_from(value: BseBasisSet) -> Result<Self, Self::Error> {
         let mut atomic_mapping = HashMap::with_capacity(value.elements.len());
 
-        // TODO: this is pretty deeply nested, this can definitely be improved somehow
+        // TODO(style): this is pretty deeply nested, this can definitely be improved somehow
         for (element, configuration) in value.elements {
             let mut element_basis = Vec::new();
 
