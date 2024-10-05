@@ -7,16 +7,20 @@ use super::utils::{coulomb_auxiliary, hermite_expansion};
 
 pub(crate) fn compute_eri(
     basis_a @ ShellBasis {
-        shell_type: type_a, ..
+        shell_type: _type_a,
+        ..
     }: ShellBasis,
     basis_b @ ShellBasis {
-        shell_type: type_b, ..
+        shell_type: _type_b,
+        ..
     }: ShellBasis,
     basis_c @ ShellBasis {
-        shell_type: type_c, ..
+        shell_type: _type_c,
+        ..
     }: ShellBasis,
     basis_d @ ShellBasis {
-        shell_type: type_d, ..
+        shell_type: _type_d,
+        ..
     }: ShellBasis,
 ) -> Array4<f64> {
     gen_eri(basis_a, basis_b, basis_c, basis_d)
@@ -58,11 +62,12 @@ fn gen_eri(
 
     let mut result = Array4::zeros((count_a, count_b, count_c, count_d));
 
+    // TODO(perf): symmetry
     for global_a in start_a..start_a + basis_a.len() {
-        for global_b in start_a.max(start_b)..start_b + basis_b.len() {
+        for global_b in start_b..start_b + basis_b.len() {
             for global_c in start_c..start_c + basis_c.len() {
-                for global_d in start_c.max(start_d)..start_d + basis_d.len() {
-                    {
+                for global_d in start_d..start_d + basis_d.len() {
+                    /*{
                         // hyper index symmetry exploitation
                         let ab = global_a * (global_a + 1) / 2 + global_b;
                         let cd = global_c * (global_c + 1) / 2 + global_d;
@@ -70,7 +75,7 @@ fn gen_eri(
                         if ab > cd {
                             continue;
                         }
-                    }
+                    }*/
 
                     let i = global_a - start_a;
                     let j = global_b - start_b;
@@ -113,7 +118,6 @@ fn contracted_gaussian_eri(
 
             // inlined utils::product_center to reuse p
             let product_center_ab = (exp_a * pos_a.coords + exp_b * pos_b.coords) / p;
-
             let e1s: Vec<_> = (0..=l1 + l2)
                 .map(|k| hermite_expansion([l1, l2, k], diff_ab.x, exp_a, exp_b))
                 .collect();

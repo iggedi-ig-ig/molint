@@ -7,10 +7,12 @@ use super::utils::hermite_expansion;
 /// Function to compute the overlap integrals between two electron shells of arbitrary type
 pub(crate) fn compute_overlap(
     basis_a @ ShellBasis {
-        shell_type: type_a, ..
+        shell_type: _type_a,
+        ..
     }: ShellBasis,
     basis_b @ ShellBasis {
-        shell_type: type_b, ..
+        shell_type: _type_b,
+        ..
     }: ShellBasis,
 ) -> DMatrix<f64> {
     // TODO(perf): specific implementations for simple shell types
@@ -62,9 +64,6 @@ fn gen_overlap(
 
             for (coeff_a, exp_a) in a.iter() {
                 for (coeff_b, exp_b) in b.iter() {
-                    let p = exp_a + exp_b;
-                    let q = exp_a * exp_b / p;
-
                     sum += coeff_a
                         * coeff_b
                         * hermite_expansion([l1, l2, 0], diff.x, exp_a, exp_b)

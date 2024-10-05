@@ -2,17 +2,17 @@
 #![allow(unused)]
 #![deny(unused_imports)]
 
-mod basis;
+pub mod basis;
 mod integrals;
 mod periodic_table;
 pub mod system;
-pub mod types;
+// mod types;
+
+pub use integrals::{eri, kinetic, nuclear, overlap};
 
 use basis::BasisSet;
-pub use integrals::{eri, kinetic, nuclear, overlap};
 use nalgebra::{DMatrix, Point3};
 use system::{Atom, MolecularSystem};
-
 // TODO: rename file to lib.rs and remove main.rs
 fn main() -> anyhow::Result<()> {
     pretty_env_logger::init();
@@ -40,12 +40,12 @@ fn main() -> anyhow::Result<()> {
     };
 
     let overlap = overlap(&system);
-    log::debug!("{:0.4}", reflect(overlap).trace());
+    log::debug!("{:0.4}", reflect(overlap));
     let kinetic = kinetic(&system);
-    log::debug!("{:0.4}", reflect(kinetic).trace());
+    log::debug!("{:0.4}", reflect(kinetic));
     let nuclear = nuclear(&system);
-    log::debug!("{:0.4}", reflect(nuclear).trace());
+    log::debug!("{:0.4}", reflect(nuclear));
     let electron = eri(&system);
-    log::debug!("{:0.8}", electron);
+    log::debug!("{:0.4}", electron);
     Ok(())
 }

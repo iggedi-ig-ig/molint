@@ -5,10 +5,10 @@ use crate::{integrals::utils::hermite_expansion, system::ShellBasis};
 /// Function to compute the kinetic energy integrals between two electron shells of arbitrary type
 pub(crate) fn compute_kinetic(
     basis_a @ ShellBasis {
-        shell_type: type_a, ..
+        shell_type: _type_a, ..
     }: ShellBasis,
     basis_b @ ShellBasis {
-        shell_type: type_b, ..
+        shell_type: _type_b, ..
     }: ShellBasis,
 ) -> DMatrix<f64> {
     // TODO(perf): specific implementations for simple shell types
@@ -17,18 +17,18 @@ pub(crate) fn compute_kinetic(
 
 fn gen_kinetic(
     ShellBasis {
-        shell_type: type_a,
         center: pos_a,
         basis: basis_a,
         start_index: start_a,
         count: count_a,
+        ..
     }: ShellBasis,
     ShellBasis {
-        shell_type: type_b,
         center: pos_b,
         basis: basis_b,
         start_index: start_b,
         count: count_b,
+        ..
     }: ShellBasis,
 ) -> DMatrix<f64> {
     // a lot of stuff that is helpful to understand this function is documented in the gen_overlap
@@ -67,7 +67,7 @@ fn gen_kinetic(
                     };
 
                     let term0 = exp_b
-                        * (2.0 * type_b.magnitude() as f64 + 3.0)
+                        * (2.0 * (l2 + m2 + n2) as f64 + 3.0)
                         * primitive_overlap(exp_a, exp_b, (l1, m1, n1), (l2, m2, n2), diff);
                     let term1 = -2.0
                         * exp_b.powi(2)

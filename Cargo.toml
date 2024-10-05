@@ -16,3 +16,11 @@ ndarray = "0.16.1"
 pretty_env_logger = "0.5.0"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+
+[[bench]]
+name = "integrals"
+harness = false

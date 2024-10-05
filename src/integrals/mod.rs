@@ -33,14 +33,13 @@ macro_rules! one_electron_integral {
                     let result = $function(basis_a, basis_b);
 
                     // copy result of this particular integral into the total result matrix
-                    for (i, a) in (start_a..start_a + count_a).enumerate() {
-                        for (j, b) in (start_b..start_b + count_b).enumerate() {
-                            output[(a, b)] = result[(i, j)];
-                        }
-                    }
+                    output
+                        .view_mut((start_a, start_b), (count_a, count_b))
+                        .copy_from(&result);
                 }
             }
 
+            log::debug!("{}: {output:2.4}", stringify!($name));
             output
         }
     };
@@ -57,20 +56,22 @@ pub fn nuclear(system: &MolecularSystem) -> DMatrix<f64> {
             count: count_a,
             ..
         } = system.shell_basis(a);
-        for b in a..system.shells.len() {
+        // TODO: exploit symmetry
+        // (change start to a here)
+        for b in 0..system.shells.len() {
             let basis_b @ ShellBasis {
                 start_index: start_b,
                 count: count_b,
                 ..
             } = system.shell_basis(b);
             let result = nuclear::compute_nuclear(basis_a, basis_b, system);
-            for (i, a) in (start_a..start_a + count_a).enumerate() {
-                for (j, b) in (start_b..start_b + count_b).enumerate() {
-                    output[(a, b)] = result[(i, j)];
-                }
-            }
+
+            output
+                .view_mut((start_a, start_b), (count_a, count_b))
+                .copy_from(&result);
         }
     }
+    log::debug!("nuclear: {output:2.4}");
     output
 }
 
@@ -81,10 +82,11 @@ pub fn eri(system: &MolecularSystem) -> Array4<f64> {
 
     let mut output = Array4::zeros([n_basis; 4]);
 
+    // TODO(perf): symmetry
     for a in 0..n_shells {
-        for b in a..n_shells {
+        for b in 0..n_shells {
             for c in 0..n_shells {
-                for d in c..n_shells {
+                for d in 0..n_shells {
                     let basis_a @ ShellBasis {
                         start_index: start_a,
                         count: count_a,
@@ -107,18 +109,19 @@ pub fn eri(system: &MolecularSystem) -> Array4<f64> {
                     } = system.shell_basis(d);
 
                     let result = eri::compute_eri(basis_a, basis_b, basis_c, basis_d);
-                    for (i, a) in (start_a..start_a + count_a).enumerate() {
-                        for (j, b) in (start_b..start_b + count_b).enumerate() {
-                            for (k, c) in (start_c..start_c + count_c).enumerate() {
-                                for (l, d) in (start_d..start_d + count_d).enumerate() {
-                                    output[(a, b, c, d)] = result[(i, j, k, l)]
-                                }
-                            }
-                        }
-                    }
+
+                    output
+                        .slice_mut(ndarray::s![
+                            start_a..start_a + count_a,
+                            start_b..start_b + count_b,
+                            start_c..start_c + count_c,
+                            start_d..start_d + count_d,
+                        ])
+                        .assign(&result);
                 }
             }
         }
     }
+
     output
 }
