@@ -108,10 +108,10 @@ fn contracted_gaussian_eri(
 ) -> f64 {
     let mut sum = 0.0;
 
-    let angular_a @ [l1, m1, n1] = a.angular.map(|n| n as i32);
-    let angular_b @ [l2, m2, n2] = b.angular.map(|n| n as i32);
-    let angular_c @ [l3, m3, n3] = c.angular.map(|n| n as i32);
-    let angular_d @ [l4, m4, n4] = d.angular.map(|n| n as i32);
+    let angular_a @ [l1, m1, n1] = a.angular;
+    let angular_b @ [l2, m2, n2] = b.angular;
+    let angular_c @ [l3, m3, n3] = c.angular;
+    let angular_d @ [l4, m4, n4] = d.angular;
 
     for (coeff_a, exp_a) in a.iter() {
         for (coeff_b, exp_b) in b.iter() {

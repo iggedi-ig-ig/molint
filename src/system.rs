@@ -117,51 +117,10 @@ pub struct Shell {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ShellType(pub(crate) u32);
+pub struct ShellType(pub(crate) i32);
 
 impl ShellType {
-    pub fn magnitude(&self) -> u32 {
+    pub fn magnitude(&self) -> i32 {
         self.0
-    }
-
-    pub fn vectors(&self) -> Vec<[u32; 3]> {
-        let l = self.magnitude();
-        match l {
-            0 => vec![[0; 3]],
-            _ => {
-                let capacity = (l + 2) * (l + 1) / 2;
-                let mut output = Vec::with_capacity(capacity as usize);
-
-                for lz in 0..=l {
-                    for ly in 0..=l - lz {
-                        if let Some(lx) = l.checked_sub(lz + ly) {
-                            output.push([lx, ly, lz]);
-                        }
-                    }
-                }
-
-                output
-            }
-        }
-    }
-}
-
-/// Test to ensure that ShellType::vectors is correct
-#[test]
-fn test_angular_momentum_count() {
-    use std::collections::HashSet;
-
-    // because we know that
-    for l in 0..=100 {
-        let expected = (l + 2) * (l + 1) / 2;
-        let set = ShellType(l).vectors().into_iter().collect::<HashSet<_>>();
-        let actual = set.len();
-
-        assert!(set.into_iter().all(|[i, j, k]| i + j + k == l));
-
-        assert_eq!(
-            expected as usize, actual,
-            "incorrect vector count for l={l}"
-        )
     }
 }

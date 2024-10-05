@@ -50,8 +50,8 @@ fn gen_nuclear(
 
             let mut sum = 0.0;
 
-            let angular_a = a.angular.map(|n| n as i32);
-            let angular_b = b.angular.map(|n| n as i32);
+            let angular_a = a.angular;
+            let angular_b = b.angular;
 
             for (coeff_a, exp_a) in a.iter() {
                 for (coeff_b, exp_b) in b.iter() {

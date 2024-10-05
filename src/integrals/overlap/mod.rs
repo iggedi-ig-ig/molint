@@ -59,8 +59,8 @@ fn gen_overlap(
 
             let mut sum = 0.0;
 
-            let [l1, m1, n1] = a.angular.map(|n| n as i32);
-            let [l2, m2, n2] = b.angular.map(|n| n as i32);
+            let [l1, m1, n1] = a.angular;
+            let [l2, m2, n2] = b.angular;
 
             for (coeff_a, exp_a) in a.iter() {
                 for (coeff_b, exp_b) in b.iter() {

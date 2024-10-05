@@ -48,8 +48,8 @@ fn gen_kinetic(
             let a = basis_a[i];
             let b = basis_b[j];
 
-            let [l1, m1, n1] = a.angular.map(|n| n as i32);
-            let [l2, m2, n2] = b.angular.map(|n| n as i32);
+            let [l1, m1, n1] = a.angular;
+            let [l2, m2, n2] = b.angular;
 
             let mut sum = 0.0;
 

@@ -10,7 +10,7 @@ use crate::{periodic_table::ElementType, system::Atom};
 pub struct ContractedGaussian {
     pub coefficients: Vec<f64>,
     pub exponents: Vec<f64>,
-    pub angular: [u32; 3],
+    pub angular: [i32; 3],
 }
 
 impl ContractedGaussian {
@@ -82,7 +82,7 @@ impl TryFrom<BseBasisSet> for BasisSet {
                 {
                     let angular_vectors = generate_angular_vectors(angular_magnitude);
 
-                    for angular @ (i, j, k) in angular_vectors {
+                    for angular in angular_vectors {
                         let mut exponents = Vec::with_capacity(electron_shell.exponents.len());
                         let mut coefficients =
                             Vec::with_capacity(electron_shell.coefficients.len());
@@ -104,7 +104,7 @@ impl TryFrom<BseBasisSet> for BasisSet {
                         element_basis.push(ContractedGaussian {
                             coefficients,
                             exponents,
-                            angular: [i, j, k].map(|i| i as u32),
+                            angular,
                         });
                     }
                 }
@@ -118,7 +118,7 @@ impl TryFrom<BseBasisSet> for BasisSet {
 }
 
 // generate all (i, j, k) such that i + j + k = angular
-fn generate_angular_vectors(angular_magnitude: i32) -> Vec<(i32, i32, i32)> {
+fn generate_angular_vectors(angular_magnitude: i32) -> Vec<[i32; 3]> {
     let mut angular_vectors = Vec::with_capacity(8);
 
     for (i, j, k) in itertools::iproduct!(
@@ -127,7 +127,7 @@ fn generate_angular_vectors(angular_magnitude: i32) -> Vec<(i32, i32, i32)> {
         0..=angular_magnitude
     ) {
         if i + j + k == angular_magnitude {
-            angular_vectors.push((i, j, k));
+            angular_vectors.push([i, j, k]);
         }
     }
 
@@ -135,9 +135,7 @@ fn generate_angular_vectors(angular_magnitude: i32) -> Vec<(i32, i32, i32)> {
 }
 
 /// Normalization constant of a [GaussianPrimitive] with the given parameters
-fn gaussian_norm(exponent: f64, angular: (i32, i32, i32)) -> f64 {
-    let (i, j, k) = angular;
-
+fn gaussian_norm(exponent: f64, [i, j, k]: [i32; 3]) -> f64 {
     (std::f64::consts::FRAC_2_PI * exponent)
         .powi(3)
         .sqrt()
