@@ -56,9 +56,7 @@ pub fn nuclear(system: &MolecularSystem) -> DMatrix<f64> {
             count: count_a,
             ..
         } = system.shell_basis(a);
-        // TODO: exploit symmetry
-        // (change start to a here)
-        for b in 0..system.shells.len() {
+        for b in a..system.shells.len() {
             let basis_b @ ShellBasis {
                 start_index: start_b,
                 count: count_b,

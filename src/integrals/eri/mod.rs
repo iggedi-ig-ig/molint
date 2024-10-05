@@ -1,5 +1,6 @@
 use nalgebra::{Point3, Vector3};
 use ndarray::Array4;
+use smallvec::SmallVec;
 
 use crate::{basis::ContractedGaussian, system::ShellBasis};
 
@@ -116,15 +117,18 @@ fn contracted_gaussian_eri(
         for (coeff_b, exp_b) in b.iter() {
             let p = exp_a + exp_b;
 
+            // TODO(perf): for known angular momenta, this can be arrays, which have even less
+            // overhead than smallvec
+            const N: usize = 4;
             // inlined utils::product_center to reuse p
             let product_center_ab = (exp_a * pos_a.coords + exp_b * pos_b.coords) / p;
-            let e1s: Vec<_> = (0..=l1 + l2)
+            let e1s: SmallVec<[_; N]> = (0..=l1 + l2)
                 .map(|k| hermite_expansion([l1, l2, k], diff_ab.x, exp_a, exp_b))
                 .collect();
-            let e2s: Vec<_> = (0..=m1 + m2)
+            let e2s: SmallVec<[_; N]> = (0..=m1 + m2)
                 .map(|k| hermite_expansion([m1, m2, k], diff_ab.y, exp_a, exp_b))
                 .collect();
-            let e3s: Vec<_> = (0..=n1 + n2)
+            let e3s: SmallVec<[_; N]> = (0..=n1 + n2)
                 .map(|k| hermite_expansion([n1, n2, k], diff_ab.z, exp_a, exp_b))
                 .collect();
 
@@ -137,13 +141,13 @@ fn contracted_gaussian_eri(
 
                     let diff_product = product_center_cd - product_center_ab;
 
-                    let e4s: Vec<_> = (0..=l3 + l4)
+                    let e4s: SmallVec<[_; 4]> = (0..=l3 + l4)
                         .map(|k| hermite_expansion([l3, l4, k], diff_cd.x, exp_c, exp_d))
                         .collect();
-                    let e5s: Vec<_> = (0..=m3 + m4)
+                    let e5s: SmallVec<[_; N]> = (0..=m3 + m4)
                         .map(|k| hermite_expansion([m3, m4, k], diff_cd.y, exp_c, exp_d))
                         .collect();
-                    let e6s: Vec<_> = (0..=n3 + n4)
+                    let e6s: SmallVec<[_; N]> = (0..=n3 + n4)
                         .map(|k| hermite_expansion([n3, n4, k], diff_cd.z, exp_c, exp_d))
                         .collect();
 
