@@ -1,30 +1,36 @@
+mod ssss;
+
 use nalgebra::{Point3, Vector3};
 use ndarray::Array4;
 use smallvec::SmallVec;
 
-use crate::{basis::ContractedGaussian, system::ShellBasis};
+use crate::{
+    basis::ContractedGaussian,
+    system::{ShellBasis, ShellType},
+};
 
 use super::utils::{coulomb_auxiliary, hermite_expansion};
 
 pub(crate) fn compute_eri(
     basis_a @ ShellBasis {
-        shell_type: _type_a,
-        ..
+        shell_type: type_a, ..
     }: ShellBasis,
     basis_b @ ShellBasis {
-        shell_type: _type_b,
-        ..
+        shell_type: type_b, ..
     }: ShellBasis,
     basis_c @ ShellBasis {
-        shell_type: _type_c,
-        ..
+        shell_type: type_c, ..
     }: ShellBasis,
     basis_d @ ShellBasis {
-        shell_type: _type_d,
-        ..
+        shell_type: type_d, ..
     }: ShellBasis,
 ) -> Array4<f64> {
-    gen_eri(basis_a, basis_b, basis_c, basis_d)
+    match (type_a, type_b, type_c, type_d) {
+        (ShellType(0), ShellType(0), ShellType(0), ShellType(0)) => {
+            ssss::ssss_eri(basis_a, basis_b, basis_c, basis_d)
+        }
+        _ => gen_eri(basis_a, basis_b, basis_c, basis_d),
+    }
 }
 
 /// Generic eri integral between four electron shells.
