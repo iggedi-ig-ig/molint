@@ -80,11 +80,10 @@ pub fn eri(system: &MolecularSystem) -> Array4<f64> {
 
     let mut output = Array4::zeros([n_basis; 4]);
 
-    // TODO(perf): symmetry
     for a in 0..n_shells {
-        for b in 0..n_shells {
+        for b in a..n_shells {
             for c in 0..n_shells {
-                for d in 0..n_shells {
+                for d in c..n_shells {
                     let basis_a @ ShellBasis {
                         start_index: start_a,
                         count: count_a,

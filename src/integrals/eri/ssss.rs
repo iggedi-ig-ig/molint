@@ -39,11 +39,17 @@ pub(super) fn ssss_eri(
 
     let mut result = Array4::zeros((count_a, count_b, count_c, count_d));
 
-    // TODO(perf): symmetry
     for global_a in start_a..start_a + basis_a.len() {
-        for global_b in start_b..start_b + basis_b.len() {
+        for global_b in start_b.max(global_a)..start_b + basis_b.len() {
+            let ab = global_a * (global_a + 1) / 2 + global_b;
             for global_c in start_c..start_c + basis_c.len() {
-                for global_d in start_d..start_d + basis_d.len() {
+                for global_d in start_d.max(global_c)..start_d + basis_d.len() {
+                    let cd = global_c * (global_c + 1) / 2 + global_d;
+
+                    if ab > cd {
+                        continue;
+                    }
+
                     let i = global_a - start_a;
                     let j = global_b - start_b;
                     let k = global_c - start_c;
