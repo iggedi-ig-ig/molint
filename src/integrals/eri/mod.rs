@@ -76,7 +76,7 @@ fn gen_eri(
     //  3. ij <= kl (hyperindices ij and kl with ab = a * (a + 1) / 2 + b)
     for global_a in start_a..start_a + basis_a.len() {
         for global_b in start_b.max(global_a)..start_b + basis_b.len() {
-            let ab = global_a * (global_a + 0) / 2 + global_b;
+            let ab = global_a * (global_a + 1) / 2 + global_b;
 
             for global_c in start_c..start_c + basis_c.len() {
                 for global_d in start_d.max(global_c)..start_d + basis_d.len() {
