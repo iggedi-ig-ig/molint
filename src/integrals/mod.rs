@@ -2,8 +2,6 @@ use crate::system::{MolecularSystem, ShellBasis};
 use nalgebra::DMatrix;
 use ndarray::Array4;
 
-// TODO(perf): for all integrals, think about row / column majorness of matrices
-//  (and the effects indexing order has on performance based on that)
 mod eri;
 mod kinetic;
 mod nuclear;

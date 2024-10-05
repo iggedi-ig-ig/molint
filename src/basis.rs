@@ -1,15 +1,18 @@
 use std::{collections::HashMap, fs::File, path::Path};
 
 use serde::Deserialize;
+use smallvec::SmallVec;
 
 use crate::{periodic_table::ElementType, system::Atom};
 
 /// Data associated with a contracted gaussian. stored as a struct of lists.
-// TODO(perf): SmallVec (or even complete stack storage?)
+// TODO(style): 6 is kind of a magic number here. I think I'm probably fine with this as an
+// arbitary amount of exponents / coefficients can still be used, but it's worth thinking about
+// again at some later time
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct ContractedGaussian {
-    pub coefficients: Vec<f64>,
-    pub exponents: Vec<f64>,
+    pub coefficients: SmallVec<[f64; 6]>,
+    pub exponents: SmallVec<[f64; 6]>,
     pub angular: [i32; 3],
 }
 
@@ -102,8 +105,8 @@ impl TryFrom<BseBasisSet> for BasisSet {
                         }
 
                         element_basis.push(ContractedGaussian {
-                            coefficients,
-                            exponents,
+                            coefficients: coefficients.into(),
+                            exponents: exponents.into(),
                             angular,
                         });
                     }
