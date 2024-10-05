@@ -17,6 +17,20 @@ const HYDROGEN_ATOMS: &[Atom] = &[
         position: Point3::new(0.0, 0.0, 1.4),
     },
 ];
+const WATER_ATOMS: &[Atom] = &[
+    Atom {
+        ordinal: 1,
+        position: Point3::new(0.4175, 0.0, 0.83),
+    },
+    Atom {
+        ordinal: 8,
+        position: Point3::new(0.0, 0.0, -0.31),
+    },
+    Atom {
+        ordinal: 1,
+        position: Point3::new(-0.4175, 0.0, 0.83),
+    },
+];
 
 macro_rules! integral_bench {
     ($name:ident, $function:path) => {
@@ -28,14 +42,17 @@ macro_rules! integral_bench {
 
             let hydrogen_sto_3g = MolecularSystem::from_atoms(HYDROGEN_ATOMS, &basis_sto_3g);
             let hydrogen_631g = MolecularSystem::from_atoms(HYDROGEN_ATOMS, &basis_631g);
+            let water_631g = MolecularSystem::from_atoms(WATER_ATOMS, &basis_631g);
 
             let mut group = c.benchmark_group(stringify!($name));
             group.bench_function("H2 STO-3G", |b| {
                 b.iter_with_large_drop(|| $function(black_box(&hydrogen_sto_3g)))
             });
-
             group.bench_function("H2 6-31G", |b| {
                 b.iter_with_large_drop(|| $function(black_box(&hydrogen_631g)))
+            });
+            group.bench_function("H20 6-31G", |b| {
+                b.iter_with_large_drop(|| $function(black_box(&water_631g)))
             });
             group.finish();
         }
