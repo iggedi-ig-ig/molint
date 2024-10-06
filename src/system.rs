@@ -1,6 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::File, path::Path};
 
+use itertools::Itertools;
 use nalgebra::Point3;
+use serde::{Deserialize, Serialize};
 
 use crate::basis::{BasisSet, ContractedGaussian};
 
@@ -11,12 +13,38 @@ pub struct Atom {
     pub position: Point3<f64>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct ConfigAtom {
+    element: String,
+    position: [f64; 3],
+}
+
+impl TryFrom<ConfigAtom> for Atom {
+    type Error = anyhow::Error;
+
+    fn try_from(value: ConfigAtom) -> Result<Self, Self::Error> {
+        Ok(Self {
+            ordinal: value.element.parse()?,
+            position: Point3::from(value.position),
+        })
+    }
+}
+
 #[derive(Debug)]
 /// Represents the quantum system of a molecule.
 pub struct MolecularSystem<'b> {
     pub atoms: Vec<Atom>,
     pub basis: Vec<&'b ContractedGaussian>,
     pub(crate) shells: Vec<Shell>,
+}
+
+impl<'a> MolecularSystem<'a> {
+    pub fn load(path: impl AsRef<Path>, basis_set: &'a BasisSet) -> anyhow::Result<Self> {
+        let config_atoms: Vec<ConfigAtom> = serde_json::from_reader(File::open(path)?)?;
+        let atoms: Vec<Atom> = config_atoms.into_iter().map(Atom::try_from).try_collect()?;
+
+        Ok(Self::from_atoms(&atoms, basis_set))
+    }
 }
 
 /// Represents the basis of a specific shell in the basis of some molecular system.
