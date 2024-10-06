@@ -1,14 +1,11 @@
 use nalgebra::DMatrix;
 use ndarray::Array4;
 
-pub struct SymmetricMatrix(DMatrix<f64>);
+/// typesafe wrapper for symmetric matrices
+pub struct SymmetricMatrix(pub(crate) DMatrix<f64>);
 
 impl SymmetricMatrix {
-    pub fn zeros(n: usize) -> Self {
-        Self(DMatrix::zeros(n, n))
-    }
-
-    /// Index into the underlying [Array2] directly, without canonicalizing the index
+    /// Index into the underlying [Array4] directly, without canonicalizing the index
     ///
     /// # Safety
     /// The caller must ensure that the index is canonical
@@ -16,7 +13,7 @@ impl SymmetricMatrix {
         &mut self.0[index]
     }
 
-    /// Index into the underlying [Array2] directly, without canonicalizing the index
+    /// Index into the underlying [Array4] directly, without canonicalizing the index
     ///
     /// # Safety
     /// The caller must ensure that the index is canonical
@@ -33,12 +30,6 @@ impl std::ops::Index<(usize, usize)> for SymmetricMatrix {
     }
 }
 
-impl std::ops::IndexMut<(usize, usize)> for SymmetricMatrix {
-    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
-        &mut self.0[canonicalize_2d_index(index)]
-    }
-}
-
 impl std::fmt::Display for SymmetricMatrix {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
@@ -51,13 +42,10 @@ impl From<SymmetricMatrix> for DMatrix<f64> {
     }
 }
 
-pub struct EriTensor(Array4<f64>);
+/// Typesafe wrapper for a tensor respecting the symmetries of ERIs
+pub struct EriTensor(pub(crate) Array4<f64>);
 
 impl EriTensor {
-    pub fn zeros(n: usize) -> Self {
-        Self(Array4::zeros([n; 4]))
-    }
-
     /// Index into the underlying [Array4] directly, without canonicalizing the index
     ///
     /// # Safety
@@ -80,12 +68,6 @@ impl std::ops::Index<(usize, usize, usize, usize)> for EriTensor {
 
     fn index(&self, index: (usize, usize, usize, usize)) -> &Self::Output {
         &self.0[canonicalize_4d_index(index)]
-    }
-}
-
-impl std::ops::IndexMut<(usize, usize, usize, usize)> for EriTensor {
-    fn index_mut(&mut self, index: (usize, usize, usize, usize)) -> &mut Self::Output {
-        &mut self.0[canonicalize_4d_index(index)]
     }
 }
 

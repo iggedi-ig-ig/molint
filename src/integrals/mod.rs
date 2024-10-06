@@ -1,4 +1,7 @@
-use crate::system::{MolecularSystem, ShellBasis};
+use crate::{
+    system::{MolecularSystem, ShellBasis},
+    EriTensor, SymmetricMatrix,
+};
 use nalgebra::DMatrix;
 use ndarray::Array4;
 
@@ -11,7 +14,7 @@ mod utils;
 // TODO(style): probably remove this macro
 macro_rules! one_electron_integral {
     ($name:ident, $function:path) => {
-        pub fn $name(system: &MolecularSystem) -> DMatrix<f64> {
+        pub fn $name(system: &MolecularSystem) -> SymmetricMatrix {
             let mut output = DMatrix::zeros(system.n_basis(), system.n_basis());
 
             for a in 0..system.shells.len() {
@@ -38,7 +41,7 @@ macro_rules! one_electron_integral {
             }
 
             log::debug!("{}: {output:2.4}", stringify!($name));
-            output
+            SymmetricMatrix(output)
         }
     };
 }
@@ -46,7 +49,7 @@ macro_rules! one_electron_integral {
 one_electron_integral!(overlap, overlap::compute_overlap);
 one_electron_integral!(kinetic, kinetic::compute_kinetic);
 
-pub fn nuclear(system: &MolecularSystem) -> DMatrix<f64> {
+pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
     let mut output = DMatrix::zeros(system.n_basis(), system.n_basis());
     for a in 0..system.shells.len() {
         let basis_a @ ShellBasis {
@@ -68,11 +71,11 @@ pub fn nuclear(system: &MolecularSystem) -> DMatrix<f64> {
         }
     }
     log::debug!("nuclear: {output:2.4}");
-    output
+    SymmetricMatrix(output)
 }
 
 // TODO: custom tensor type to save on storage (only 1/8 should be needed)
-pub fn eri(system: &MolecularSystem) -> Array4<f64> {
+pub fn eri(system: &MolecularSystem) -> EriTensor {
     let n_basis = system.basis.len();
     let n_shells = system.shells.len();
 
@@ -118,5 +121,5 @@ pub fn eri(system: &MolecularSystem) -> Array4<f64> {
         }
     }
 
-    output
+    EriTensor(output)
 }
