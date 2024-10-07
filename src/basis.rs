@@ -71,13 +71,28 @@ impl TryFrom<BseBasisSet> for BasisSet {
             let mut element_basis = Vec::new();
 
             for electron_shell in &configuration.electron_shells {
-                if electron_shell.function_type != "gto" {
-                    log::warn!(
-                        "skipping function type {} on element {:?}",
-                        electron_shell.function_type,
-                        element
-                    );
-                    continue;
+                match electron_shell.function_type.as_str() {
+                    "gto" | "gto_cartesian" => {
+                        // these are equivalent and can be computed using the current integral
+                        // implementation. Angular momentum is represented as cartesian
+                        // polynomials.
+                    }
+                    "gto_spherical" => {
+                        // In contrast to "gto" and "gto_cartesian", basis functions are
+                        // (supposed to be) represented as spherical harmonics. The current
+                        // implementation, however, does not support integrating over these.
+
+                        // TODO(completeness): implement conversion function from "gto_spherical"
+                        //  to "gto_cartesian"
+                        log::warn!(
+                            r#"skipping unsupported basis function type "gto_spherical" on element {element:?}"#
+                        );
+                        continue;
+                    }
+                    function_type => {
+                        log::warn!("skipping unknown basis function type {function_type} on element {element:?}");
+                        continue;
+                    }
                 }
 
                 for (index, &angular_magnitude) in
