@@ -41,7 +41,7 @@ fn gen_kinetic(
     // this neseted loop is weird - for better explanation, see the comments in gen_overlap in
     // 'integrals/overlap/mod.rs'
     for global_a in start_a..start_a + basis_a.len() {
-        for global_b in global_a.max(start_b)..start_b + count_b {
+        for global_b in start_b.max(global_a)..start_b + count_b {
             let i = global_a - start_a;
             let j = global_b - start_b;
 

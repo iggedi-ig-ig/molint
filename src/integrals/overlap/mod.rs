@@ -50,7 +50,7 @@ fn gen_overlap(
         // In this case, this means that we only want to compute S_ab
         // if global_a <= global_b, meaning we can start the loop at
         // *at least* global_a (but at start_b if start_b > global_a)
-        for global_b in global_a.max(start_b)..start_b + count_b {
+        for global_b in start_b.max(global_a)..start_b + count_b {
             let i = global_a - start_a;
             let j = global_b - start_b;
 
