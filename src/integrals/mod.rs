@@ -15,7 +15,7 @@ mod utils;
 macro_rules! one_electron_integral {
     ($name:ident, $function:path) => {
         pub fn $name(system: &MolecularSystem) -> SymmetricMatrix {
-            let mut output = DMatrix::zeros(system.n_basis(), system.n_basis());
+            let mut output = SymmetricMatrix::zeros(system.n_basis());
 
             for a in 0..system.shells.len() {
                 let basis_a @ ShellBasis {
@@ -34,14 +34,19 @@ macro_rules! one_electron_integral {
                     let result = $function(basis_a, basis_b);
 
                     // copy result of this particular integral into the total result matrix
-                    output
-                        .view_mut((start_a, start_b), (count_a, count_b))
-                        .copy_from(&result);
+                    for (i, a) in (start_a..start_a + count_a).enumerate() {
+                        for (j, b) in (start_b..start_b + count_b)
+                            .enumerate()
+                            .skip_while(|&(_, b)| a > b)
+                        {
+                            output[(a, b)] = result[(i, j)];
+                        }
+                    }
                 }
             }
 
-            log::debug!("{}: {output:2.4}", stringify!($name));
-            SymmetricMatrix(output)
+            log::debug!("{}: {:2.4}", stringify!($name), DMatrix::from(&output));
+            output
         }
     };
 }
@@ -50,7 +55,7 @@ one_electron_integral!(overlap, overlap::compute_overlap);
 one_electron_integral!(kinetic, kinetic::compute_kinetic);
 
 pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
-    let mut output = DMatrix::zeros(system.n_basis(), system.n_basis());
+    let mut output = SymmetricMatrix::zeros(system.n_basis());
     for a in 0..system.shells.len() {
         let basis_a @ ShellBasis {
             start_index: start_a,
@@ -65,13 +70,18 @@ pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
             } = system.shell_basis(b);
             let result = nuclear::compute_nuclear(basis_a, basis_b, system);
 
-            output
-                .view_mut((start_a, start_b), (count_a, count_b))
-                .copy_from(&result);
+            for (i, a) in (start_a..start_a + count_a).enumerate() {
+                for (j, b) in (start_b..start_b + count_b)
+                    .enumerate()
+                    .skip_while(|&(_, b)| a > b)
+                {
+                    output[(a, b)] = result[(i, j)];
+                }
+            }
         }
     }
-    log::debug!("nuclear: {output:2.4}");
-    SymmetricMatrix(output)
+    log::debug!("nuclear: {:2.4}", DMatrix::from(&output));
+    output
 }
 
 // TODO: custom tensor type to save on storage (only 1/8 should be needed)

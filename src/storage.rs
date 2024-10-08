@@ -1,24 +1,17 @@
 use nalgebra::DMatrix;
 use ndarray::Array4;
 
-/// typesafe wrapper for symmetric matrices
-pub struct SymmetricMatrix(pub(crate) DMatrix<f64>);
+pub struct SymmetricMatrix {
+    data: Vec<f64>,
+    n: usize,
+}
 
 impl SymmetricMatrix {
-    /// Index into the underlying [Array4] directly, without canonicalizing the index
-    ///
-    /// # Safety
-    /// The caller must ensure that the index is canonical
-    pub unsafe fn index_unchecked_mut(&mut self, index: (usize, usize)) -> &mut f64 {
-        &mut self.0[index]
-    }
-
-    /// Index into the underlying [Array4] directly, without canonicalizing the index
-    ///
-    /// # Safety
-    /// The caller must ensure that the index is canonical
-    pub unsafe fn index_unchecked(&self, index: (usize, usize)) -> f64 {
-        self.0[index]
+    pub(crate) fn zeros(n: usize) -> Self {
+        Self {
+            data: vec![0.0; n * (n + 1) / 2],
+            n,
+        }
     }
 }
 
@@ -26,19 +19,27 @@ impl std::ops::Index<(usize, usize)> for SymmetricMatrix {
     type Output = f64;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
-        &self.0[canonicalize_2d_index(index)]
+        let index = canonicalize_2d_index(index);
+        &self.data[linearize_upper_triangular(self.n, index)]
     }
 }
 
-impl std::fmt::Display for SymmetricMatrix {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+impl std::ops::IndexMut<(usize, usize)> for SymmetricMatrix {
+    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
+        let index = canonicalize_2d_index(index);
+        &mut self.data[linearize_upper_triangular(self.n, index)]
     }
 }
 
 impl From<SymmetricMatrix> for DMatrix<f64> {
     fn from(value: SymmetricMatrix) -> Self {
-        DMatrix::from_fn(value.0.nrows(), value.0.ncols(), |i, j| value[(i, j)])
+        DMatrix::from(&value)
+    }
+}
+
+impl From<&SymmetricMatrix> for DMatrix<f64> {
+    fn from(value: &SymmetricMatrix) -> Self {
+        DMatrix::from_fn(value.n, value.n, |i, j| value[(i, j)])
     }
 }
 
@@ -77,6 +78,10 @@ impl std::fmt::Display for EriTensor {
     }
 }
 
+const fn linearize_upper_triangular(n: usize, (i, j): (usize, usize)) -> usize {
+    n * i - i * (i + 1) / 2 + j
+}
+
 /// if necessary, permute (i, j) such that
 ///  1. i <= j
 const fn canonicalize_2d_index((i, j): (usize, usize)) -> (usize, usize) {
@@ -106,6 +111,3 @@ const fn canonicalize_4d_index(
         (k, l, i, j)
     }
 }
-
-#[cfg(test)]
-mod tests {}
