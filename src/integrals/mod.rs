@@ -1,8 +1,14 @@
+use std::{
+    fs::read_to_string,
+    thread::{self, JoinHandle, ScopedJoinHandle},
+};
+
 use crate::{
     system::{MolecularSystem, ShellBasis},
     EriTensor, SymmetricMatrix,
 };
 use nalgebra::DMatrix;
+use ndarray::Array4;
 
 mod eri;
 mod kinetic;
@@ -94,58 +100,89 @@ pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
     output
 }
 
+struct EriShellIntegralTask<'s> {
+    join_handle: ScopedJoinHandle<'s, Array4<f64>>,
+
+    // start_index, count
+    range_a: (usize, usize),
+    range_b: (usize, usize),
+    range_c: (usize, usize),
+    range_d: (usize, usize),
+}
+
 pub fn eri(system: &MolecularSystem) -> EriTensor {
     let n_shells = system.shells.len();
 
-    let mut output = EriTensor::zeros(system.n_basis());
+    thread::scope(|s| {
+        let mut tasks = Vec::with_capacity(n_shells.pow(2) * (n_shells + 1).pow(2) / 4);
+        for a in 0..n_shells {
+            for b in a..n_shells {
+                for c in 0..n_shells {
+                    for d in c..n_shells {
+                        let basis_a @ ShellBasis {
+                            start_index: start_a,
+                            count: count_a,
+                            ..
+                        } = system.shell_basis(a);
+                        let basis_b @ ShellBasis {
+                            start_index: start_b,
+                            count: count_b,
+                            ..
+                        } = system.shell_basis(b);
+                        let basis_c @ ShellBasis {
+                            start_index: start_c,
+                            count: count_c,
+                            ..
+                        } = system.shell_basis(c);
+                        let basis_d @ ShellBasis {
+                            start_index: start_d,
+                            count: count_d,
+                            ..
+                        } = system.shell_basis(d);
 
-    for a in 0..n_shells {
-        for b in a..n_shells {
-            for c in 0..n_shells {
-                for d in c..n_shells {
-                    let basis_a @ ShellBasis {
-                        start_index: start_a,
-                        count: count_a,
-                        ..
-                    } = system.shell_basis(a);
-                    let basis_b @ ShellBasis {
-                        start_index: start_b,
-                        count: count_b,
-                        ..
-                    } = system.shell_basis(b);
-                    let basis_c @ ShellBasis {
-                        start_index: start_c,
-                        count: count_c,
-                        ..
-                    } = system.shell_basis(c);
-                    let basis_d @ ShellBasis {
-                        start_index: start_d,
-                        count: count_d,
-                        ..
-                    } = system.shell_basis(d);
+                        tasks.push(EriShellIntegralTask {
+                            join_handle: s.spawn(move || {
+                                eri::compute_eri(basis_a, basis_b, basis_c, basis_d)
+                            }),
+                            range_a: (start_a, count_a),
+                            range_b: (start_b, count_b),
+                            range_c: (start_c, count_c),
+                            range_d: (start_d, count_d),
+                        });
+                    }
+                }
+            }
+        }
 
-                    let result = eri::compute_eri(basis_a, basis_b, basis_c, basis_d);
+        let mut output = EriTensor::zeros(system.n_basis());
 
-                    for (i, a) in (start_a..start_a + count_a).enumerate() {
-                        for (j, b) in (start_b..start_b + count_b)
+        for EriShellIntegralTask {
+            join_handle,
+            range_a: (start_a, count_a),
+            range_b: (start_b, count_b),
+            range_c: (start_c, count_c),
+            range_d: (start_d, count_d),
+        } in tasks
+        {
+            let result = join_handle.join().unwrap();
+            for (i, a) in (start_a..start_a + count_a).enumerate() {
+                for (j, b) in (start_b..start_b + count_b)
+                    .enumerate()
+                    .skip_while(|&(_, b)| a > b)
+                {
+                    let ab = a * (a + 1) / 2 + b;
+                    for (k, c) in (start_c..start_c + count_c).enumerate() {
+                        for (l, d) in (start_d..start_d + count_d)
                             .enumerate()
-                            .skip_while(|&(_, b)| a > b)
+                            .skip_while(|&(_, d)| c > d || ab > c * (c + 1) / 2 + d)
                         {
-                            let ab = a * (a + 1) / 2 + b;
-                            for (k, c) in (start_c..start_c + count_c).enumerate() {
-                                for (l, d) in (start_d..start_d + count_d)
-                                    .enumerate()
-                                    .skip_while(|&(_, d)| c > d || ab > c * (c + 1) / 2 + d)
-                                {
-                                    *output.index_unchecked_mut((a, b, c, d)) = result[(i, j, k, l)]
-                                }
-                            }
+                            *output.index_unchecked_mut((a, b, c, d)) = result[(i, j, k, l)]
                         }
                     }
                 }
             }
         }
-    }
 
-    output
+        output
+    })
 }
