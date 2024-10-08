@@ -12,6 +12,10 @@ impl SymmetricMatrix {
             n,
         }
     }
+
+    pub(crate) fn index_unchecked_mut(&mut self, index: (usize, usize)) -> &mut f64 {
+        &mut self.data[linearize_upper_triangular(self.n, index)]
+    }
 }
 
 impl std::ops::Index<(usize, usize)> for SymmetricMatrix {
@@ -56,6 +60,10 @@ impl EriTensor {
             data: vec![0.0; n.pow(2) * (n + 1).pow(2) / 4],
             n,
         }
+    }
+
+    pub(crate) fn index_unchecked_mut(&mut self, index: (usize, usize, usize, usize)) -> &mut f64 {
+        &mut self.data[linearize_symmetric_4d(self.n, index)]
     }
 }
 

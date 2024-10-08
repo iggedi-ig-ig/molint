@@ -82,7 +82,7 @@ pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
                     .enumerate()
                     .skip_while(|&(_, b)| a > b)
                 {
-                    output[(a, b)] = result[(i, j)];
+                    *output.index_unchecked_mut((a, b)) = result[(i, j)];
                 }
             }
         }
@@ -137,7 +137,7 @@ pub fn eri(system: &MolecularSystem) -> EriTensor {
                                     .enumerate()
                                     .skip_while(|&(_, d)| c > d || ab > c * (c + 1) / 2 + d)
                                 {
-                                    output[(a, b, c, d)] = result[(i, j, k, l)]
+                                    *output.index_unchecked_mut((a, b, c, d)) = result[(i, j, k, l)]
                                 }
                             }
                         }
