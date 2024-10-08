@@ -45,7 +45,15 @@ macro_rules! one_electron_integral {
                 }
             }
 
-            log::debug!("{}: {:2.4}", stringify!($name), DMatrix::from(&output));
+            let log_level = log::Level::Debug;
+            if log::log_enabled!(log_level) {
+                log::log!(
+                    log_level,
+                    "{}: {:2.4}",
+                    stringify!($name),
+                    DMatrix::from(&output)
+                );
+            }
             output
         }
     };
@@ -80,7 +88,10 @@ pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
             }
         }
     }
-    log::debug!("nuclear: {:2.4}", DMatrix::from(&output));
+    let log_level = log::Level::Debug;
+    if log::log_enabled!(log::Level::Debug) {
+        log::log!(log_level, "nuclear: {:2.4}", DMatrix::from(&output));
+    }
     output
 }
 
