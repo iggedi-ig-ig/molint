@@ -1,5 +1,4 @@
 use nalgebra::DMatrix;
-use ndarray::Array4;
 
 pub struct SymmetricMatrix {
     data: Vec<f64>,
@@ -43,24 +42,20 @@ impl From<&SymmetricMatrix> for DMatrix<f64> {
     }
 }
 
-/// Typesafe wrapper for a tensor respecting the symmetries of ERIs
-pub struct EriTensor(pub(crate) Array4<f64>);
+pub struct EriTensor {
+    data: Vec<f64>,
+    n: usize,
+}
 
 impl EriTensor {
-    /// Index into the underlying [Array4] directly, without canonicalizing the index
-    ///
-    /// # Safety
-    /// The caller must ensure that the index is canonical
-    pub unsafe fn index_unchecked_mut(&mut self, index: (usize, usize, usize, usize)) -> &mut f64 {
-        &mut self.0[index]
-    }
-
-    /// Index into the underlying [Array4] directly, without canonicalizing the index
-    ///
-    /// # Safety
-    /// The caller must ensure that the index is canonical
-    pub unsafe fn index_unchecked(&self, index: (usize, usize, usize, usize)) -> f64 {
-        self.0[index]
+    pub(crate) fn zeros(n: usize) -> Self {
+        // This capacity is an upper bound, as there is no closed form expression for the exact
+        // number of integrals to compute.
+        // It could technically be precomputed, but this version allows for simplified index math.
+        Self {
+            data: vec![0.0; n.pow(2) * (n + 1).pow(2) / 4],
+            n,
+        }
     }
 }
 
@@ -68,18 +63,27 @@ impl std::ops::Index<(usize, usize, usize, usize)> for EriTensor {
     type Output = f64;
 
     fn index(&self, index: (usize, usize, usize, usize)) -> &Self::Output {
-        &self.0[canonicalize_4d_index(index)]
+        let index = canonicalize_4d_index(index);
+        &self.data[linearize_symmetric_4d(self.n, index)]
     }
 }
 
-impl std::fmt::Display for EriTensor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+impl std::ops::IndexMut<(usize, usize, usize, usize)> for EriTensor {
+    fn index_mut(&mut self, index: (usize, usize, usize, usize)) -> &mut Self::Output {
+        let index = canonicalize_4d_index(index);
+        &mut self.data[linearize_symmetric_4d(self.n, index)]
     }
 }
 
 const fn linearize_upper_triangular(n: usize, (i, j): (usize, usize)) -> usize {
-    n * i - i * (i + 1) / 2 + j
+    n * i + j - i * (i + 1) / 2
+}
+
+const fn linearize_symmetric_4d(n: usize, (i, j, k, l): (usize, usize, usize, usize)) -> usize {
+    let block_index_ij = linearize_upper_triangular(n, (i, j));
+    let block_index_kl = linearize_upper_triangular(n, (k, l));
+
+    block_index_ij * n * (n + 1) / 2 + block_index_kl
 }
 
 /// if necessary, permute (i, j) such that

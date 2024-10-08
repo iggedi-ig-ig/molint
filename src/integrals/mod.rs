@@ -3,7 +3,6 @@ use crate::{
     EriTensor, SymmetricMatrix,
 };
 use nalgebra::DMatrix;
-use ndarray::Array4;
 
 mod eri;
 mod kinetic;
@@ -95,12 +94,10 @@ pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
     output
 }
 
-// TODO: custom tensor type to save on storage (only 1/8 should be needed)
 pub fn eri(system: &MolecularSystem) -> EriTensor {
-    let n_basis = system.basis.len();
     let n_shells = system.shells.len();
 
-    let mut output = Array4::zeros([n_basis; 4]);
+    let mut output = EriTensor::zeros(system.n_basis());
 
     for a in 0..n_shells {
         for b in a..n_shells {
@@ -129,18 +126,26 @@ pub fn eri(system: &MolecularSystem) -> EriTensor {
 
                     let result = eri::compute_eri(basis_a, basis_b, basis_c, basis_d);
 
-                    output
-                        .slice_mut(ndarray::s![
-                            start_a..start_a + count_a,
-                            start_b..start_b + count_b,
-                            start_c..start_c + count_c,
-                            start_d..start_d + count_d,
-                        ])
-                        .assign(&result);
+                    for (i, a) in (start_a..start_a + count_a).enumerate() {
+                        for (j, b) in (start_b..start_b + count_b)
+                            .enumerate()
+                            .skip_while(|&(_, b)| a > b)
+                        {
+                            let ab = a * (a + 1) / 2 + b;
+                            for (k, c) in (start_c..start_c + count_c).enumerate() {
+                                for (l, d) in (start_d..start_d + count_d)
+                                    .enumerate()
+                                    .skip_while(|&(_, d)| c > d || ab > c * (c + 1) / 2 + d)
+                                {
+                                    output[(a, b, c, d)] = result[(i, j, k, l)]
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    EriTensor(output)
+    output
 }
