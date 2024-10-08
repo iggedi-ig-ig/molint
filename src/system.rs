@@ -1,5 +1,6 @@
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{fs::File, path::Path};
 
+use indexmap::IndexMap;
 use itertools::Itertools;
 use nalgebra::Point3;
 use serde::{Deserialize, Serialize};
@@ -65,7 +66,7 @@ impl<'b> MolecularSystem<'b> {
     /// Create a molecular system given the atom types and positons and a basis set.
     /// The basis set must outlive this object.
     pub fn from_atoms(atoms: &[Atom], basis_set: &'b BasisSet) -> Self {
-        let mut shell_map = HashMap::new();
+        let mut shell_map = IndexMap::new();
 
         // collect basis functions based on shells
         for (i, atom) in atoms.iter().enumerate() {
