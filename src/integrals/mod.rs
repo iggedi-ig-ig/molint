@@ -1,7 +1,4 @@
-use std::{
-    fs::read_to_string,
-    thread::{self, JoinHandle, ScopedJoinHandle},
-};
+use std::thread::{self, ScopedJoinHandle};
 
 use crate::{
     system::{MolecularSystem, ShellBasis},

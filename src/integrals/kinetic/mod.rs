@@ -5,10 +5,12 @@ use crate::{integrals::utils::hermite_expansion, system::ShellBasis};
 /// Function to compute the kinetic energy integrals between two electron shells of arbitrary type
 pub(crate) fn compute_kinetic(
     basis_a @ ShellBasis {
-        shell_type: _type_a, ..
+        shell_type: _type_a,
+        ..
     }: ShellBasis,
     basis_b @ ShellBasis {
-        shell_type: _type_b, ..
+        shell_type: _type_b,
+        ..
     }: ShellBasis,
 ) -> DMatrix<f64> {
     // TODO(perf): specific implementations for simple shell types
