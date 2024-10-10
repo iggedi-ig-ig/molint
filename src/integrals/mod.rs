@@ -111,7 +111,7 @@ pub fn eri(system: &MolecularSystem) -> EriTensor {
     let n_shells = system.shells.len();
 
     thread::scope(|s| {
-        let mut tasks = Vec::with_capacity(n_shells.pow(2) * (n_shells + 1).pow(2) / 4);
+        let mut output = EriTensor::zeros(system.n_basis());
         for a in 0..n_shells {
             for b in a..n_shells {
                 for c in 0..n_shells {
@@ -137,43 +137,24 @@ pub fn eri(system: &MolecularSystem) -> EriTensor {
                             ..
                         } = system.shell_basis(d);
 
-                        tasks.push(EriShellIntegralTask {
-                            join_handle: s.spawn(move || {
-                                eri::compute_eri(basis_a, basis_b, basis_c, basis_d)
-                            }),
-                            range_a: (start_a, count_a),
-                            range_b: (start_b, count_b),
-                            range_c: (start_c, count_c),
-                            range_d: (start_d, count_d),
-                        });
-                    }
-                }
-            }
-        }
+                        let result = eri::compute_eri(basis_a, basis_b, basis_c, basis_d);
 
-        let mut output = EriTensor::zeros(system.n_basis());
-
-        for EriShellIntegralTask {
-            join_handle,
-            range_a: (start_a, count_a),
-            range_b: (start_b, count_b),
-            range_c: (start_c, count_c),
-            range_d: (start_d, count_d),
-        } in tasks
-        {
-            let result = join_handle.join().unwrap();
-            for (i, a) in (start_a..start_a + count_a).enumerate() {
-                for (j, b) in (start_b..start_b + count_b)
-                    .enumerate()
-                    .skip_while(|&(_, b)| a > b)
-                {
-                    let ab = a * (a + 1) / 2 + b;
-                    for (k, c) in (start_c..start_c + count_c).enumerate() {
-                        for (l, d) in (start_d..start_d + count_d)
-                            .enumerate()
-                            .skip_while(|&(_, d)| c > d || ab > c * (c + 1) / 2 + d)
-                        {
-                            *output.index_unchecked_mut((a, b, c, d)) = result[(i, j, k, l)]
+                        for (i, a) in (start_a..start_a + count_a).enumerate() {
+                            for (j, b) in (start_b..start_b + count_b)
+                                .enumerate()
+                                .skip_while(|&(_, b)| a > b)
+                            {
+                                let ab = a * (a + 1) / 2 + b;
+                                for (k, c) in (start_c..start_c + count_c).enumerate() {
+                                    for (l, d) in (start_d..start_d + count_d)
+                                        .enumerate()
+                                        .skip_while(|&(_, d)| c > d || ab > c * (c + 1) / 2 + d)
+                                    {
+                                        *output.index_unchecked_mut((a, b, c, d)) =
+                                            result[(i, j, k, l)]
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -1,15 +1,17 @@
 mod ssss;
 
+use itertools::Itertools;
 use nalgebra::{Point3, Vector3};
 use ndarray::Array4;
 use smallvec::SmallVec;
 
 use crate::{
     basis::ContractedGaussian,
+    hermite::ExpansionCoefficients,
     system::{ShellBasis, ShellType},
 };
 
-use super::utils::{coulomb_auxiliary, hermite_expansion};
+use super::utils::coulomb_auxiliary;
 
 pub(crate) fn compute_eri(
     basis_a @ ShellBasis {
@@ -96,10 +98,13 @@ fn gen_eri(
                     let c = basis_c[k];
                     let d = basis_d[l];
 
+                    let expansion_ab = ExpansionCoefficients::compute_for(a, b, diff_ab);
+                    let expansion_cd = ExpansionCoefficients::compute_for(c, d, diff_cd);
                     result[(i, j, k, l)] = contracted_gaussian_eri(
                         [a, b, c, d],
                         [pos_a, pos_b, pos_c, pos_d],
                         [diff_ab, diff_cd],
+                        [expansion_ab, expansion_cd],
                     );
                 }
             }
@@ -113,16 +118,23 @@ fn contracted_gaussian_eri(
     [a, b, c, d]: [&ContractedGaussian; 4],
     [pos_a, pos_b, pos_c, pos_d]: [Point3<f64>; 4],
     [diff_ab, diff_cd]: [Vector3<f64>; 2],
+    [expansion_ab, expansion_cd]: [ExpansionCoefficients; 2],
 ) -> f64 {
     let mut sum = 0.0;
 
-    let angular_a @ [l1, m1, n1] = a.angular;
-    let angular_b @ [l2, m2, n2] = b.angular;
-    let angular_c @ [l3, m3, n3] = c.angular;
-    let angular_d @ [l4, m4, n4] = d.angular;
+    let angular_a = a.angular;
+    let angular_b = b.angular;
+    let angular_c = c.angular;
+    let angular_d = d.angular;
 
-    for (coeff_a, exp_a) in a.iter() {
-        for (coeff_b, exp_b) in b.iter() {
+    // to calculate the ERI between four contracted gaussians C1, C2, C3, C4 with exponents E1, E2, E3, E4, we need the following expansion
+    // coefficients:
+    //
+    //  E_e1e2^k with
+    //
+
+    for (i, (coeff_a, exp_a)) in a.iter().enumerate() {
+        for (j, (coeff_b, exp_b)) in b.iter().enumerate() {
             let p = exp_a + exp_b;
 
             // TODO(perf): for known angular momenta, this can be arrays, which have even less
@@ -130,18 +142,9 @@ fn contracted_gaussian_eri(
             const N: usize = 4;
             // inlined utils::product_center to reuse p
             let product_center_ab = (exp_a * pos_a.coords + exp_b * pos_b.coords) / p;
-            let e1s: SmallVec<[_; N]> = (0..=l1 + l2)
-                .map(|k| hermite_expansion([l1, l2, k], diff_ab.x, exp_a, exp_b))
-                .collect();
-            let e2s: SmallVec<[_; N]> = (0..=m1 + m2)
-                .map(|k| hermite_expansion([m1, m2, k], diff_ab.y, exp_a, exp_b))
-                .collect();
-            let e3s: SmallVec<[_; N]> = (0..=n1 + n2)
-                .map(|k| hermite_expansion([n1, n2, k], diff_ab.z, exp_a, exp_b))
-                .collect();
 
-            for (coeff_c, exp_c) in c.iter() {
-                for (coeff_d, exp_d) in d.iter() {
+            for (k, (coeff_c, exp_c)) in c.iter().enumerate() {
+                for (l, (coeff_d, exp_d)) in d.iter().enumerate() {
                     let q = exp_c + exp_d;
 
                     // inlined utils::product_center to reuse q
@@ -149,22 +152,13 @@ fn contracted_gaussian_eri(
 
                     let diff_product = product_center_cd - product_center_ab;
 
-                    let e4s: SmallVec<[_; 4]> = (0..=l3 + l4)
-                        .map(|k| hermite_expansion([l3, l4, k], diff_cd.x, exp_c, exp_d))
-                        .collect();
-                    let e5s: SmallVec<[_; N]> = (0..=m3 + m4)
-                        .map(|k| hermite_expansion([m3, m4, k], diff_cd.y, exp_c, exp_d))
-                        .collect();
-                    let e6s: SmallVec<[_; N]> = (0..=n3 + n4)
-                        .map(|k| hermite_expansion([n3, n4, k], diff_cd.z, exp_c, exp_d))
-                        .collect();
-
                     sum += coeff_a
                         * coeff_b
                         * coeff_c
                         * coeff_d
                         * primitive_eri(
-                            &[&e1s, &e2s, &e3s, &e4s, &e5s, &e6s],
+                            [&expansion_ab, &expansion_cd],
+                            [i, j, k, l],
                             angular_a,
                             angular_b,
                             angular_c,
@@ -180,7 +174,8 @@ fn contracted_gaussian_eri(
 }
 
 fn primitive_eri(
-    expansion_coeffs: &[&[f64]],
+    [expansion_ab, expansion_cd]: [&ExpansionCoefficients; 2],
+    [i, j, k, l]: [usize; 4],
     [l1, m1, n1]: [i32; 3],
     [l2, m2, n2]: [i32; 3],
     [l3, m3, n3]: [i32; 3],
@@ -197,12 +192,12 @@ fn primitive_eri(
                 for t2 in 0..=l3 + l4 {
                     for u2 in 0..=m3 + m4 {
                         for v2 in 0..=n3 + n4 {
-                            sum += expansion_coeffs[0][t1 as usize]
-                                * expansion_coeffs[1][u1 as usize]
-                                * expansion_coeffs[2][v1 as usize]
-                                * expansion_coeffs[3][t2 as usize]
-                                * expansion_coeffs[4][u2 as usize]
-                                * expansion_coeffs[5][v2 as usize]
+                            sum += expansion_ab.coefficient(0, i, j, t1 as usize)
+                                * expansion_ab.coefficient(1, i, j, u1 as usize)
+                                * expansion_ab.coefficient(2, i, j, v1 as usize)
+                                * expansion_cd.coefficient(0, k, l, t2 as usize)
+                                * expansion_cd.coefficient(1, k, l, u2 as usize)
+                                * expansion_cd.coefficient(2, k, l, v2 as usize)
                                 * coulomb_auxiliary(
                                     t1 + t2,
                                     u1 + u2,
