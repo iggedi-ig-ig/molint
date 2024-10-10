@@ -80,6 +80,14 @@ fn gen_eri(
         for global_b in start_b.max(global_a)..start_b + basis_b.len() {
             let ab = global_a * (global_a + 1) / 2 + global_b;
 
+            let i = global_a - start_a;
+            let j = global_b - start_b;
+
+            let a = basis_a[i];
+            let b = basis_b[j];
+
+            let expansion_ab = ExpansionCoefficients::compute_for(a, b, diff_ab);
+
             for global_c in start_c..start_c + basis_c.len() {
                 for global_d in start_d.max(global_c)..start_d + basis_d.len() {
                     let cd = global_c * (global_c + 1) / 2 + global_d;
@@ -88,23 +96,16 @@ fn gen_eri(
                         continue;
                     }
 
-                    let i = global_a - start_a;
-                    let j = global_b - start_b;
                     let k = global_c - start_c;
                     let l = global_d - start_d;
-
-                    let a = basis_a[i];
-                    let b = basis_b[j];
                     let c = basis_c[k];
                     let d = basis_d[l];
 
-                    let expansion_ab = ExpansionCoefficients::compute_for(a, b, diff_ab);
                     let expansion_cd = ExpansionCoefficients::compute_for(c, d, diff_cd);
                     result[(i, j, k, l)] = contracted_gaussian_eri(
                         [a, b, c, d],
                         [pos_a, pos_b, pos_c, pos_d],
-                        [diff_ab, diff_cd],
-                        [expansion_ab, expansion_cd],
+                        [&expansion_ab, &expansion_cd],
                     );
                 }
             }
@@ -117,8 +118,7 @@ fn gen_eri(
 fn contracted_gaussian_eri(
     [a, b, c, d]: [&ContractedGaussian; 4],
     [pos_a, pos_b, pos_c, pos_d]: [Point3<f64>; 4],
-    [diff_ab, diff_cd]: [Vector3<f64>; 2],
-    [expansion_ab, expansion_cd]: [ExpansionCoefficients; 2],
+    [expansion_ab, expansion_cd]: [&ExpansionCoefficients; 2],
 ) -> f64 {
     let mut sum = 0.0;
 
@@ -137,9 +137,6 @@ fn contracted_gaussian_eri(
         for (j, (coeff_b, exp_b)) in b.iter().enumerate() {
             let p = exp_a + exp_b;
 
-            // TODO(perf): for known angular momenta, this can be arrays, which have even less
-            // overhead than smallvec
-            const N: usize = 4;
             // inlined utils::product_center to reuse p
             let product_center_ab = (exp_a * pos_a.coords + exp_b * pos_b.coords) / p;
 
