@@ -1,9 +1,7 @@
 mod ssss;
 
-use itertools::Itertools;
 use nalgebra::{Point3, Vector3};
 use ndarray::Array4;
-use smallvec::SmallVec;
 
 use crate::{
     basis::ContractedGaussian,
@@ -154,7 +152,7 @@ fn contracted_gaussian_eri(
                         * coeff_c
                         * coeff_d
                         * primitive_eri(
-                            [&expansion_ab, &expansion_cd],
+                            [expansion_ab, expansion_cd],
                             [i, j, k, l],
                             angular_a,
                             angular_b,
@@ -170,6 +168,7 @@ fn contracted_gaussian_eri(
     sum
 }
 
+#[allow(clippy::too_many_arguments)]
 fn primitive_eri(
     [expansion_ab, expansion_cd]: [&ExpansionCoefficients; 2],
     [i, j, k, l]: [usize; 4],
