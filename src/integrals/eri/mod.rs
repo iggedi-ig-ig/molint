@@ -5,7 +5,7 @@ use ndarray::Array4;
 
 use crate::{
     basis::ContractedGaussian,
-    hermite::ExpansionCoefficients,
+    hermite::{ExpansionCoefficients, HermiteCache},
     system::{ShellBasis, ShellType},
 };
 
@@ -24,12 +24,13 @@ pub(crate) fn compute_eri(
     basis_d @ ShellBasis {
         shell_type: type_d, ..
     }: ShellBasis,
+    hermite_cache: &HermiteCache,
 ) -> Array4<f64> {
     match (type_a, type_b, type_c, type_d) {
         (ShellType(0), ShellType(0), ShellType(0), ShellType(0)) => {
             ssss::ssss_eri(basis_a, basis_b, basis_c, basis_d)
         }
-        _ => gen_eri(basis_a, basis_b, basis_c, basis_d),
+        _ => gen_eri(basis_a, basis_b, basis_c, basis_d, hermite_cache),
     }
 }
 
@@ -63,10 +64,8 @@ fn gen_eri(
         count: count_d,
         ..
     }: ShellBasis,
+    hermite_cache: &HermiteCache,
 ) -> Array4<f64> {
-    let diff_ab = pos_b - pos_a;
-    let diff_cd = pos_d - pos_c;
-
     let mut result = Array4::zeros((count_a, count_b, count_c, count_d));
 
     // Symmetry:
@@ -84,7 +83,7 @@ fn gen_eri(
             let a = basis_a[i];
             let b = basis_b[j];
 
-            let expansion_ab = ExpansionCoefficients::compute_for(a, b, diff_ab);
+            let expansion_ab = hermite_cache.basis_pair(global_a, global_b);
 
             for global_c in start_c..start_c + basis_c.len() {
                 for global_d in start_d.max(global_c)..start_d + basis_d.len() {
@@ -99,7 +98,7 @@ fn gen_eri(
                     let c = basis_c[k];
                     let d = basis_d[l];
 
-                    let expansion_cd = ExpansionCoefficients::compute_for(c, d, diff_cd);
+                    let expansion_cd = hermite_cache.basis_pair(global_c, global_d);
                     result[(i, j, k, l)] = contracted_gaussian_eri(
                         [a, b, c, d],
                         [pos_a, pos_b, pos_c, pos_d],

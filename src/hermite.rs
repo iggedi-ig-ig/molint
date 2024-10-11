@@ -1,7 +1,12 @@
+use itertools::Itertools;
 use nalgebra::{DMatrix, Vector3};
 
-use crate::basis::ContractedGaussian;
+use crate::{
+    basis::ContractedGaussian,
+    system::{MolecularSystem, ShellBasis},
+};
 
+#[derive(Debug)]
 pub struct ExpansionCoefficients {
     expansion_x: Vec<DMatrix<f64>>,
     expansion_y: Vec<DMatrix<f64>>,
@@ -9,7 +14,7 @@ pub struct ExpansionCoefficients {
 }
 
 impl ExpansionCoefficients {
-    pub fn compute_for(
+    pub fn from_basis_pair(
         basis_a: &ContractedGaussian,
         basis_b: &ContractedGaussian,
         diff: Vector3<f64>,
@@ -22,6 +27,7 @@ impl ExpansionCoefficients {
 
         let p = DMatrix::from_fn(a.len(), b.len(), |i, j| a[i] + b[j]);
         let q = DMatrix::from_fn(a.len(), b.len(), |i, j| a[i] * b[j] / (a[i] + b[j]));
+
         let [expansion_x, expansion_y, expansion_z] =
             [(l1, l2, diff.x), (m1, m2, diff.y), (n1, n2, diff.z)].map(|(i, j, diff)| {
                 (0..=i + j)
@@ -45,6 +51,61 @@ impl ExpansionCoefficients {
         };
 
         index_into[k][(i, j)]
+    }
+}
+
+/// Essentially a symmetric matrix of expansion coefficients for pairs of basis functions
+pub struct HermiteCache {
+    data: Vec<ExpansionCoefficients>,
+    n: usize,
+}
+
+impl HermiteCache {
+    pub fn new(system: &MolecularSystem) -> Self {
+        let n_basis = system.n_basis();
+        let n_shells = system.shells.len();
+
+        let mut data: Vec<_> = (0..n_basis * n_basis).map(|_| None).collect();
+
+        for a in 0..n_shells {
+            for b in 0..n_shells {
+                let ShellBasis {
+                    start_index: start_a,
+                    count: count_a,
+                    center: pos_a,
+                    ..
+                } = system.shell_basis(a);
+
+                let ShellBasis {
+                    start_index: start_b,
+                    count: count_b,
+                    center: pos_b,
+                    ..
+                } = system.shell_basis(b);
+
+                let diff_ab = pos_b - pos_a;
+
+                for i in start_a..start_a + count_a {
+                    for j in start_b..start_b + count_b {
+                        data[n_basis * i + j] = Some(ExpansionCoefficients::from_basis_pair(
+                            system.basis[i],
+                            system.basis[j],
+                            diff_ab,
+                        ));
+                    }
+                }
+            }
+        }
+
+        Self {
+            data: data.into_iter().map(Option::unwrap).collect_vec(),
+            n: n_basis,
+        }
+    }
+
+    pub fn basis_pair(&self, i: usize, j: usize) -> &ExpansionCoefficients {
+        let linear = self.n * i + j;
+        &self.data[linear]
     }
 }
 
