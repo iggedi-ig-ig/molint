@@ -2,8 +2,8 @@ use std::time::Instant;
 
 use crate::{
     hermite::HermiteCache,
+    storage::{EriTensor, SymmetricMatrix},
     system::{MolecularSystem, ShellBasis},
-    EriTensor, SymmetricMatrix,
 };
 use nalgebra::DMatrix;
 

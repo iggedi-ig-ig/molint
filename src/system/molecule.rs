@@ -1,35 +1,10 @@
-use std::{fs::File, path::Path};
-
 use indexmap::IndexMap;
 use itertools::Itertools;
-use nalgebra::Point3;
-use serde::{Deserialize, Serialize};
+use std::{fs::File, path::Path};
 
-use crate::basis::{BasisSet, ContractedGaussian};
+use crate::{basis::{BasisSet, ContractedGaussian}, system::ShellType};
 
-#[derive(Copy, Clone, Debug)]
-pub struct Atom {
-    /// also the charge of the nucleus
-    pub ordinal: usize,
-    pub position: Point3<f64>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ConfigAtom {
-    element: String,
-    position: [f64; 3],
-}
-
-impl TryFrom<ConfigAtom> for Atom {
-    type Error = anyhow::Error;
-
-    fn try_from(value: ConfigAtom) -> Result<Self, Self::Error> {
-        Ok(Self {
-            ordinal: value.element.parse()?,
-            position: Point3::from(value.position),
-        })
-    }
-}
+use super::{config_atom::ConfigAtom, shell::Shell, Atom, ShellBasis};
 
 #[derive(Debug)]
 /// Represents the quantum system of a molecule.
@@ -46,20 +21,6 @@ impl<'a> MolecularSystem<'a> {
 
         Ok(Self::from_atoms(&atoms, basis_set))
     }
-}
-
-/// Represents the basis of a specific shell in the basis of some molecular system.
-/// It's sort of a view into the molecular system, indexed by [Shell].
-//
-// TODO(style): shell_type and the angular term of contracted gaussians technically imply each
-//  other, so it's not technically necessary to store both.
-#[derive(Copy, Clone, Debug)]
-pub(crate) struct ShellBasis<'b> {
-    pub(crate) shell_type: ShellType,
-    pub(crate) center: Point3<f64>,
-    pub(crate) basis: &'b [&'b ContractedGaussian],
-    pub(crate) start_index: usize,
-    pub(crate) count: usize,
 }
 
 impl<'b> MolecularSystem<'b> {
@@ -131,25 +92,5 @@ impl<'b> MolecularSystem<'b> {
             start_index: basis_start_index,
             count: basis_size,
         }
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct Shell {
-    pub(crate) shell_type: ShellType,
-    pub(crate) atom_index: usize,
-    /// where in the list of basis functions does this shell "start" (i.e., where is the first of
-    /// this shells basis functions in that list)
-    basis_start_index: usize,
-    /// how many basis functions does this shell contain
-    basis_size: usize,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ShellType(pub(crate) i32);
-
-impl ShellType {
-    pub fn magnitude(&self) -> i32 {
-        self.0
     }
 }

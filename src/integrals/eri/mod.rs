@@ -102,7 +102,7 @@ fn gen_eri(
                     result[(i, j, k, l)] = contracted_gaussian_eri(
                         [a, b, c, d],
                         [pos_a, pos_b, pos_c, pos_d],
-                        [&expansion_ab, &expansion_cd],
+                        [expansion_ab, expansion_cd],
                     );
                 }
             }

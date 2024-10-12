@@ -1,47 +1,13 @@
-use std::{collections::HashMap, fs::File, path::Path};
+use std::collections::HashMap;
 
 use serde::Deserialize;
-use smallvec::SmallVec;
 
-use crate::{periodic_table::ElementType, system::Atom};
+use crate::periodic_table::ElementType;
 
-/// Data associated with a contracted gaussian. stored as a struct of lists.
-// TODO(style): 6 is kind of a magic number here. I think I'm probably fine with this as an
-// arbitary amount of exponents / coefficients can still be used, but it's worth thinking about
-// again at some later time
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
-pub struct ContractedGaussian {
-    pub coefficients: SmallVec<[f64; 6]>,
-    pub exponents: SmallVec<[f64; 6]>,
-    pub angular: [i32; 3],
-}
-
-impl ContractedGaussian {
-    pub(crate) fn iter(&self) -> impl Iterator<Item = (f64, f64)> + '_ {
-        self.coefficients
-            .iter()
-            .copied()
-            .zip(self.exponents.iter().copied())
-    }
-}
-
-pub struct BasisSet(HashMap<ElementType, Vec<ContractedGaussian>>);
-
-impl BasisSet {
-    pub fn load(path: impl AsRef<Path>) -> anyhow::Result<Self> {
-        let basis_set: BseBasisSet = serde_json::from_reader(File::open(path)?)?;
-        basis_set.try_into()
-    }
-
-    pub fn atomic_basis(&self, atom: &Atom) -> &[ContractedGaussian] {
-        let element_type = ElementType::from_ordinal(atom.ordinal)
-            .unwrap_or_else(|| panic!("failed to convert ordinal {} to ElementType", atom.ordinal));
-        &self.0[&element_type]
-    }
-}
+use super::{BasisSet, ContractedGaussian};
 
 #[derive(Deserialize, Debug)]
-struct BseBasisSet {
+pub(super) struct BseBasisSet {
     elements: HashMap<ElementType, BseElectronicConfiguration>,
 }
 
