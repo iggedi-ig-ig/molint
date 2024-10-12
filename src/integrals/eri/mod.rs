@@ -119,16 +119,8 @@ fn contracted_gaussian_eri(
 ) -> f64 {
     let mut sum = 0.0;
 
-    let angular_a = a.angular;
-    let angular_b = b.angular;
-    let angular_c = c.angular;
-    let angular_d = d.angular;
-
-    // to calculate the ERI between four contracted gaussians C1, C2, C3, C4 with exponents E1, E2, E3, E4, we need the following expansion
-    // coefficients:
-    //
-    //  E_e1e2^k with
-    //
+    let angular_vector_ab = Vector3::from(a.angular) + Vector3::from(b.angular);
+    let angular_vector_cd = Vector3::from(c.angular) + Vector3::from(d.angular);
 
     for (i, (coeff_a, exp_a)) in a.iter().enumerate() {
         for (j, (coeff_b, exp_b)) in b.iter().enumerate() {
@@ -153,10 +145,8 @@ fn contracted_gaussian_eri(
                         * primitive_eri(
                             [expansion_ab, expansion_cd],
                             [i, j, k, l],
-                            angular_a,
-                            angular_b,
-                            angular_c,
-                            angular_d,
+                            angular_vector_ab,
+                            angular_vector_cd,
                             [p, q],
                             diff_product,
                         );
@@ -171,22 +161,20 @@ fn contracted_gaussian_eri(
 fn primitive_eri(
     [expansion_ab, expansion_cd]: [&ExpansionCoefficients; 2],
     [i, j, k, l]: [usize; 4],
-    [l1, m1, n1]: [i32; 3],
-    [l2, m2, n2]: [i32; 3],
-    [l3, m3, n3]: [i32; 3],
-    [l4, m4, n4]: [i32; 3],
+    angular_ab: Vector3<i32>,
+    angular_cd: Vector3<i32>,
     [p, q]: [f64; 2],
     diff_product: Vector3<f64>,
 ) -> f64 {
     let alpha = p * q / (p + q);
 
     let mut sum = 0.0;
-    for t1 in 0..=l1 + l2 {
-        for u1 in 0..=m1 + m2 {
-            for v1 in 0..=n1 + n2 {
-                for t2 in 0..=l3 + l4 {
-                    for u2 in 0..=m3 + m4 {
-                        for v2 in 0..=n3 + n4 {
+    for t1 in 0..=angular_ab.x {
+        for u1 in 0..=angular_ab.y {
+            for v1 in 0..=angular_ab.z {
+                for t2 in 0..=angular_cd.x {
+                    for u2 in 0..=angular_cd.y {
+                        for v2 in 0..=angular_cd.z {
                             sum += expansion_ab.coefficient(0, i, j, t1 as usize)
                                 * expansion_ab.coefficient(1, i, j, u1 as usize)
                                 * expansion_ab.coefficient(2, i, j, v1 as usize)
