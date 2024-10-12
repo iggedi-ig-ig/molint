@@ -2,7 +2,10 @@ use indexmap::IndexMap;
 use itertools::Itertools;
 use std::{fs::File, path::Path};
 
-use crate::{basis::{BasisSet, ContractedGaussian}, system::ShellType};
+use crate::{
+    basis::{BasisSet, ContractedGaussian},
+    system::ShellType,
+};
 
 use super::{config_atom::ConfigAtom, shell::Shell, Atom, ShellBasis};
 
