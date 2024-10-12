@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use crate::{
     hermite::HermiteCache,
     system::{MolecularSystem, ShellBasis},
@@ -98,7 +100,14 @@ pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
 pub fn eri(system: &MolecularSystem) -> EriTensor {
     let n_shells = system.shells.len();
 
+    let start = Instant::now();
     let hermite_cache = HermiteCache::new(system);
+    log::debug!(
+        "computing hermite expansion coefficient cache took {:3.3?}",
+        start.elapsed()
+    );
+
+    let start = Instant::now();
     let mut output = EriTensor::zeros(system.n_basis());
     for a in 0..n_shells {
         for b in a..n_shells {
@@ -149,5 +158,6 @@ pub fn eri(system: &MolecularSystem) -> EriTensor {
         }
     }
 
+    log::debug!("computing full ERI tensor took {:3.3?}", start.elapsed());
     output
 }
