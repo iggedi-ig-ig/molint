@@ -6,6 +6,10 @@ use crate::{
     system::{MolecularSystem, ShellBasis},
 };
 
+// TODO: improve cache friendlyness of this struct.
+//  The access pattern is:
+//  Accesses are localized in k (see parameters of `ExpansionCoefficients::coeffificient`)
+//  So we should be storing something that acts like DMatrix<Vec<f64>> instead.
 #[derive(Debug)]
 pub struct ExpansionCoefficients {
     expansion_x: Vec<DMatrix<f64>>,
@@ -15,16 +19,18 @@ pub struct ExpansionCoefficients {
 
 impl ExpansionCoefficients {
     pub fn from_basis_pair(
-        basis_a: &ContractedGaussian,
-        basis_b: &ContractedGaussian,
+        &ContractedGaussian {
+            exponents: ref a,
+            angular: [l1, m1, n1],
+            ..
+        }: &ContractedGaussian,
+        &ContractedGaussian {
+            exponents: ref b,
+            angular: [l2, m2, n2],
+            ..
+        }: &ContractedGaussian,
         diff: Vector3<f64>,
     ) -> Self {
-        let [l1, m1, n1] = basis_a.angular;
-        let [l2, m2, n2] = basis_b.angular;
-
-        let a = &basis_a.exponents;
-        let b = &basis_b.exponents;
-
         let p = DMatrix::from_fn(a.len(), b.len(), |i, j| a[i] + b[j]);
         let q = DMatrix::from_fn(a.len(), b.len(), |i, j| a[i] * b[j] / (a[i] + b[j]));
 
