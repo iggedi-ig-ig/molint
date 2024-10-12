@@ -1,5 +1,7 @@
 use crate::{
-    hermite::HermiteCache, system::{MolecularSystem, ShellBasis}, EriTensor, SymmetricMatrix
+    hermite::HermiteCache,
+    system::{MolecularSystem, ShellBasis},
+    EriTensor, SymmetricMatrix,
 };
 use nalgebra::DMatrix;
 
@@ -123,7 +125,8 @@ pub fn eri(system: &MolecularSystem) -> EriTensor {
                         ..
                     } = system.shell_basis(d);
 
-                    let result = eri::compute_eri(basis_a, basis_b, basis_c, basis_d, &hermite_cache);
+                    let result =
+                        eri::compute_eri(basis_a, basis_b, basis_c, basis_d, &hermite_cache);
 
                     for (i, a) in (start_a..start_a + count_a).enumerate() {
                         for (j, b) in (start_b..start_b + count_b)
