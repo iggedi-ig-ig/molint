@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use nalgebra::{DMatrix, Vector3};
+use smallvec::SmallVec;
 
 use crate::{
     basis::ContractedGaussian,
@@ -12,9 +13,16 @@ use crate::{
 //  So we should be storing something that acts like DMatrix<Vec<f64>> instead.
 #[derive(Debug)]
 pub struct ExpansionCoefficients {
-    expansion_x: Vec<DMatrix<f64>>,
-    expansion_y: Vec<DMatrix<f64>>,
-    expansion_z: Vec<DMatrix<f64>>,
+    // Note: Though the 6 here is the same magic value as in the exponents in `ContractedGaussian`,
+    //  here this value was chosen for a different reason.
+    //  In `ContractedGaussian` it was chosen because 6 is a typical value for the largest
+    //  contraction degree, and here it was chosen because the length of these lists is equal to
+    //  the sum of angular momentum magnitudes on certain axes.
+    //  6 thus seems like a reasonable choice, because anything with higher angular momentum than d
+    //  orbitals is rather rare, so it can be a bit slower for these cases
+    expansion_x: SmallVec<[DMatrix<f64>; 6]>,
+    expansion_y: SmallVec<[DMatrix<f64>; 6]>,
+    expansion_z: SmallVec<[DMatrix<f64>; 6]>,
 }
 
 impl ExpansionCoefficients {
