@@ -15,7 +15,23 @@ impl SymmetricMatrix {
         }
     }
 
-    pub(crate) fn index_unchecked_mut(&mut self, index: (usize, usize)) -> &mut f64 {
+    pub fn copy_from(
+        &mut self,
+        from: &DMatrix<f64>,
+        (start_a, start_b): (usize, usize),
+        (count_a, count_b): (usize, usize),
+    ) {
+        for (i, a) in (start_a..start_a + count_a).enumerate() {
+            for (j, b) in (start_b..start_b + count_b)
+                .enumerate()
+                .skip_while(|&(_, b)| a > b)
+            {
+                *self.index_unchecked_mut((a, b)) = from[(i, j)];
+            }
+        }
+    }
+
+    fn index_unchecked_mut(&mut self, index: (usize, usize)) -> &mut f64 {
         &mut self.data[linearize_upper_triangular(self.n, index)]
     }
 }

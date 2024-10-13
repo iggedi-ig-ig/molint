@@ -1,3 +1,5 @@
+use ndarray::Array4;
+
 use super::*;
 
 pub struct EriTensor {
@@ -16,7 +18,31 @@ impl EriTensor {
         }
     }
 
-    pub(crate) fn index_unchecked_mut(&mut self, index: (usize, usize, usize, usize)) -> &mut f64 {
+    pub(crate) fn copy_from(
+        &mut self,
+        from: &Array4<f64>,
+        (start_a, start_b, start_c, start_d): (usize, usize, usize, usize),
+        (count_a, count_b, count_c, count_d): (usize, usize, usize, usize),
+    ) {
+        for (i, a) in (start_a..start_a + count_a).enumerate() {
+            for (j, b) in (start_b..start_b + count_b)
+                .enumerate()
+                .skip_while(|&(_, b)| a > b)
+            {
+                let ab = a * (a + 1) / 2 + b;
+                for (k, c) in (start_c..start_c + count_c).enumerate() {
+                    for (l, d) in (start_d..start_d + count_d)
+                        .enumerate()
+                        .skip_while(|&(_, d)| c > d || ab > c * (c + 1) / 2 + d)
+                    {
+                        *self.index_unchecked_mut((a, b, c, d)) = from[(i, j, k, l)];
+                    }
+                }
+            }
+        }
+    }
+
+    fn index_unchecked_mut(&mut self, index: (usize, usize, usize, usize)) -> &mut f64 {
         &mut self.data[linearize_symmetric_4d(self.n, index)]
     }
 }
