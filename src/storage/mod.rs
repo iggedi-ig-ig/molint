@@ -1,4 +1,5 @@
 mod eri_tensor;
+pub(crate) mod hermite;
 mod symmetric_matrix;
 
 pub use eri_tensor::EriTensor;

@@ -1,5 +1,4 @@
 pub mod basis;
-mod hermite;
 mod integrals;
 mod periodic_table;
 pub mod storage;

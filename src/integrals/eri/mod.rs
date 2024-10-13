@@ -5,7 +5,7 @@ use ndarray::Array4;
 
 use crate::{
     basis::ContractedGaussian,
-    hermite::{ExpansionCoefficients, HermiteCache},
+    storage::hermite::{ExpansionCoefficients, HermiteCache},
     system::{ShellBasis, ShellType},
 };
 
