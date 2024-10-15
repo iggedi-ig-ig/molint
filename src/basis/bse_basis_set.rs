@@ -6,16 +6,21 @@ use crate::periodic_table::ElementType;
 
 use super::{BasisSet, ContractedGaussian};
 
+/// Helper type to correctly deserialize a full basis set in the basis set exchange json format
 #[derive(Deserialize, Debug)]
 pub(super) struct BseBasisSet {
     elements: HashMap<ElementType, BseElectronicConfiguration>,
 }
 
+/// Helper type to correctly deseriailze basis set exchange electronic configurations of a specific
+/// atom in a [BseBasisSet]
 #[derive(Deserialize, Debug)]
 struct BseElectronicConfiguration {
     electron_shells: Vec<BseElectronShell>,
 }
 
+/// Helper type to correctly deserialize basis set exchange electron shells of a specific atom in a
+/// [BseElectronicConfiguration]
 #[derive(Deserialize, Debug)]
 #[allow(unused)]
 struct BseElectronShell {

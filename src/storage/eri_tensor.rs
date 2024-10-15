@@ -2,12 +2,25 @@ use ndarray::Array4;
 
 use super::*;
 
+/// A specialized data type that stores the electron-electron repulsion energy integrals relatively
+/// efficiently by exploiting the symmetries of the integrals.
+/// The inherent symmetry of four-center integrals are:
+///  (ij|kl) = (ji|lk) = (kl|ij) = (lk|ji) = (kj|il) = (li|jk) = (il|kj) = (jk|li)
+///
+/// These symmetries are exploited by only storing integrals (ij|kl) such that:
+///     (i)     i <= j
+///     (ii)    k <= l
+///     (iii)   i * (i + 1) / 2 + j <= k * (k + 1) / 2 + l
+///
+/// These constraints make sure that no redundant integrals (i.e, integrals that are equivalent by
+/// the inherent symmetry of the formula) are stored twice.
 pub struct EriTensor {
     data: Vec<f64>,
     n: usize,
 }
 
 impl EriTensor {
+    /// Create and allocate an [EriTensor] where all entires are zero.
     pub(crate) fn zeros(n: usize) -> Self {
         // This capacity is an upper bound, as there is no closed form expression for the exact
         // number of integrals to compute.
@@ -18,6 +31,9 @@ impl EriTensor {
         }
     }
 
+    /// Given an [Array4], copies the entries from the block starting at
+    /// (start_a, start_b, start_c, start_d) and extending for (count_a, count_b, count_c, count_d)
+    /// elements in their respective axes, to the correct positions of this [EriTensor]
     pub(crate) fn copy_from(
         &mut self,
         from: &Array4<f64>,

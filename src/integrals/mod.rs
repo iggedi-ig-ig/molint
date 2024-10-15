@@ -1,3 +1,5 @@
+//! This module contains the definitions of all logic associated with integral evaluation
+
 use std::time::Instant;
 
 use crate::{
@@ -12,48 +14,70 @@ mod nuclear;
 mod overlap;
 mod utils;
 
-// TODO(style): probably remove this macro
-macro_rules! one_electron_integral {
-    ($name:ident, $function:path) => {
-        pub fn $name(system: &MolecularSystem) -> SymmetricMatrix {
-            let mut output = SymmetricMatrix::zeros(system.n_basis());
-
-            for a in 0..system.shells.len() {
-                let basis_a @ ShellBasis {
-                    start_index: start_a,
-                    count: count_a,
-                    ..
-                } = system.shell_basis(a);
-
-                for b in a..system.shells.len() {
-                    let basis_b @ ShellBasis {
-                        start_index: start_b,
-                        count: count_b,
-                        ..
-                    } = system.shell_basis(b);
-
-                    let result = $function(basis_a, basis_b);
-                    output.copy_from(&result, (start_a, start_b), (count_a, count_b));
-                }
-            }
-
-            let log_level = log::Level::Debug;
-            if log::log_enabled!(log_level) {
-                log::log!(
-                    log_level,
-                    "{}: {:2.4}",
-                    stringify!($name),
-                    DMatrix::from(&output)
-                );
-            }
-            output
+/// Computes and returns the overlap integral matrix for the given [MolecularSystem] as a [SymmetricMatrix].
+pub fn overlap(system: &MolecularSystem) -> SymmetricMatrix {
+    let mut output = SymmetricMatrix::zeros(system.n_basis());
+    for a in 0..system.shells.len() {
+        let basis_a @ ShellBasis {
+            start_index: start_a,
+            count: count_a,
+            ..
+        } = system.shell_basis(a);
+        for b in a..system.shells.len() {
+            let basis_b @ ShellBasis {
+                start_index: start_b,
+                count: count_b,
+                ..
+            } = system.shell_basis(b);
+            let result = overlap::compute_overlap(basis_a, basis_b);
+            output.copy_from(&result, (start_a, start_b), (count_a, count_b));
         }
-    };
+    }
+    let log_level = log::Level::Debug;
+    if log::log_enabled!(log_level) {
+        log::log!(
+            log_level,
+            "{}: {:2.4}",
+            stringify!(overlap),
+            DMatrix::from(&output)
+        );
+    }
+    output
 }
 
-one_electron_integral!(overlap, overlap::compute_overlap);
-one_electron_integral!(kinetic, kinetic::compute_kinetic);
+/// Returns the kinetic energy integral matrix for the given [MolecularSystem] as a [SymmetricMatrix]
+pub fn kinetic(system: &MolecularSystem) -> SymmetricMatrix {
+    let mut output = SymmetricMatrix::zeros(system.n_basis());
+    for a in 0..system.shells.len() {
+        let basis_a @ ShellBasis {
+            start_index: start_a,
+            count: count_a,
+            ..
+        } = system.shell_basis(a);
+        for b in a..system.shells.len() {
+            let basis_b @ ShellBasis {
+                start_index: start_b,
+                count: count_b,
+                ..
+            } = system.shell_basis(b);
+            let result = kinetic::compute_kinetic(basis_a, basis_b);
+            output.copy_from(&result, (start_a, start_b), (count_a, count_b));
+        }
+    }
+    let log_level = log::Level::Debug;
+    if log::log_enabled!(log_level) {
+        log::log!(
+            log_level,
+            "{}: {:2.4}",
+            stringify!(kinetic),
+            DMatrix::from(&output)
+        );
+    }
+    output
+}
 
+/// Returns the electron-nuclear attraction energy integral matrix for the given [MolecularSystem] as a
+/// [SymmetricMatrix]
 pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
     let mut output = SymmetricMatrix::zeros(system.n_basis());
     for a in 0..system.shells.len() {
@@ -80,6 +104,8 @@ pub fn nuclear(system: &MolecularSystem) -> SymmetricMatrix {
     output
 }
 
+/// Returns the electron-electron repulsion energy integral tensor for the given [MolecularSystem]
+/// as an [EriTensor]
 pub fn eri(system: &MolecularSystem) -> EriTensor {
     let n_shells = system.shells.len();
 

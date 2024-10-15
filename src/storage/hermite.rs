@@ -11,6 +11,8 @@ use crate::{
 //  The access pattern is:
 //  Accesses are localized in k (see parameters of `ExpansionCoefficients::coeffificient`)
 //  So we should be storing something that acts like DMatrix<Vec<f64>> instead.
+/// Type that stores the hermite expansion coefficients between two [ContractedGaussian]s for the
+/// relevant angular momenta
 #[derive(Debug)]
 pub struct ExpansionCoefficients {
     // Note: Though the 6 here is the same magic value as in the exponents in `ContractedGaussian`,
@@ -26,7 +28,9 @@ pub struct ExpansionCoefficients {
 }
 
 impl ExpansionCoefficients {
-    pub fn from_basis_pair(
+    /// Compute the expansion coefficients for a given pair of [ContractedGaussian]s and their
+    /// difference in position.
+    pub(crate) fn from_basis_pair(
         &ContractedGaussian {
             exponents: ref a,
             angular: [l1, m1, n1],
@@ -56,6 +60,11 @@ impl ExpansionCoefficients {
         }
     }
 
+    /// Return the expansion coefficient between the i-th and j-th primitives on the given axis for
+    /// the k-th angular momentum.
+    /// axis = 0 => X,
+    /// axis = 1 => Y,
+    /// axis = 2 => Z
     pub fn coefficient(&self, axis: usize, i: usize, j: usize, k: usize) -> f64 {
         let index_into = match axis {
             0 => &self.expansion_x,
@@ -68,13 +77,15 @@ impl ExpansionCoefficients {
     }
 }
 
-/// Essentially a symmetric matrix of expansion coefficients for pairs of basis functions
+/// Stores [ExpansionCoefficients] for all pairs of basis functions in a list of [ContractedGaussian]s
+/// (typically from a [MolecularSystem])
 pub struct HermiteCache {
     data: Vec<ExpansionCoefficients>,
     n: usize,
 }
 
 impl HermiteCache {
+    /// Precomputes the [HermiteCache] for a given [MolecularSystem]
     pub fn new(system: &MolecularSystem) -> Self {
         let n_basis = system.n_basis();
         let n_shells = system.shells.len();
@@ -117,6 +128,7 @@ impl HermiteCache {
         }
     }
 
+    /// Returns the [ExpansionCoefficients] between basis function i and j
     pub fn basis_pair(&self, i: usize, j: usize) -> &ExpansionCoefficients {
         let linear = self.n * i + j;
         &self.data[linear]

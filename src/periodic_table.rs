@@ -1,3 +1,6 @@
+//! Contains an enum for the periodic table, with support for serde serialization and
+//! deserialization
+
 macro_rules! define_atoms {
     (
         $(#[derive($($derive:ident),*)])?
@@ -8,6 +11,7 @@ macro_rules! define_atoms {
             ),*
         }
     ) => {
+        /// An enum for the periodic table, with a variant for all known elements.
         $(#[derive($($derive),*)])?
         #[repr(usize)]
         $vis enum $enum_name {

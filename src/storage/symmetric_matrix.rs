@@ -2,12 +2,14 @@ use nalgebra::DMatrix;
 
 use super::*;
 
+/// Represents a symmetric matrix, and efficiently stores it by only storing it's upper triangle
 pub struct SymmetricMatrix {
     data: Vec<f64>,
     n: usize,
 }
 
 impl SymmetricMatrix {
+    /// Create and allocate a [SymmetricMatrix] filled with zeros, of the given size.
     pub(crate) fn zeros(n: usize) -> Self {
         Self {
             data: vec![0.0; n * (n + 1) / 2],
@@ -15,6 +17,9 @@ impl SymmetricMatrix {
         }
     }
 
+    /// Copy all entires from the given [DMatrix] into the block starting at
+    /// (start_a, start_b) containing exactly (count_a, count_b) elements in the respective
+    /// dimensions, while respecting symmetry.
     pub fn copy_from(
         &mut self,
         from: &DMatrix<f64>,

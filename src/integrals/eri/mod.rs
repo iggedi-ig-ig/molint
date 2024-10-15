@@ -11,6 +11,9 @@ use crate::{
 
 use super::utils::coulomb_auxiliary;
 
+/// Computes the electron-electron repulsion energy integral between four [ShellBasis].
+/// Branches for potentially simplifying conditions based on shell types
+/// (for example, (SS|SS) integrals are way simpler to compute than (DD|DD))
 pub(crate) fn compute_eri(
     basis_a @ ShellBasis {
         shell_type: type_a, ..
