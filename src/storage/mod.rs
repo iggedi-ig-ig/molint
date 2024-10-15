@@ -1,3 +1,5 @@
+//! This module contains types that are used to either store or cache stuff.
+
 mod eri_tensor;
 pub(crate) mod hermite;
 mod symmetric_matrix;

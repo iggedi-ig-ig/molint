@@ -10,10 +10,14 @@ use crate::{
 use super::{config_atom::ConfigAtom, shell::Shell, Atom, ShellBasis};
 
 #[derive(Debug)]
-/// Represents the quantum system of a molecule.
+/// Represents the quantum system of a molecule, represented in some [BasisSet]
 pub struct MolecularSystem<'b> {
+    /// The constituent atoms of this system
     pub atoms: Vec<Atom>,
+    /// references to the [ContractedGaussian]s of the [BasisSet] that is used to represent this
+    /// system.
     pub basis: Vec<&'b ContractedGaussian>,
+    /// The [Shell]s that this system has.
     pub(crate) shells: Vec<Shell>,
 }
 

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use super::Atom;
 
+/// A helper type for serialization of [Atom]s
 #[derive(Debug, Serialize, Deserialize)]
 pub(super) struct ConfigAtom {
     element: String,

@@ -1,3 +1,6 @@
+//! This module contains types that represent the system for which matrix elements should be
+//! calculated.
+
 mod atom;
 mod config_atom;
 mod molecule;
