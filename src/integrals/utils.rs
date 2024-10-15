@@ -53,7 +53,7 @@ pub(super) fn coulomb_auxiliary(t: i32, u: i32, v: i32, n: i32, p: f64, diff: Ve
     } else {
         diff.x * coulomb_auxiliary(t - 1, u, v, n + 1, p, diff)
             + if t > 1 {
-                coulomb_auxiliary(t - 2, u, v, n + 1, p, diff)
+                (t - 1) as f64 * coulomb_auxiliary(t - 2, u, v, n + 1, p, diff)
             } else {
                 0.0
             }
