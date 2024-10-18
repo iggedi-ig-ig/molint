@@ -15,7 +15,7 @@ use super::*;
 /// These constraints make sure that no redundant integrals (i.e, integrals that are equivalent by
 /// the inherent symmetry of the formula) are stored twice.
 pub struct EriTensor {
-    data: Vec<f64>,
+    pub data: Vec<f64>,
     n: usize,
 }
 

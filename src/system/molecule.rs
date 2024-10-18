@@ -41,8 +41,14 @@ impl<'b> MolecularSystem<'b> {
             let atomic_basis = basis_set.atomic_basis(atom);
 
             for basis_function in atomic_basis {
+                let [l, m, n] = basis_function.angular;
+                let exponents_fp: Vec<i32> = basis_function
+                    .exponents
+                    .iter()
+                    .map(|f| (f * 100.0) as i32)
+                    .collect();
                 shell_map
-                    .entry((i, basis_function.angular))
+                    .entry((i, l + m + n, exponents_fp))
                     .and_modify(|v: &mut Vec<_>| v.push(basis_function))
                     .or_insert_with(|| vec![basis_function]);
             }
@@ -51,9 +57,7 @@ impl<'b> MolecularSystem<'b> {
         let mut shells = Vec::with_capacity(shell_map.len());
         let mut basis = Vec::new();
 
-        for ((atom_index, [i, j, k]), basis_functions) in shell_map {
-            let angular_magnitude = i + j + k;
-
+        for ((atom_index, angular_magnitude, _), basis_functions) in shell_map {
             let shell = Shell {
                 shell_type: ShellType(angular_magnitude),
                 atom_index,
@@ -81,6 +85,10 @@ impl<'b> MolecularSystem<'b> {
 
     pub fn n_basis(&self) -> usize {
         self.basis.len()
+    }
+
+    pub fn n_shells(&self) -> usize {
+        self.shells.len()
     }
 
     /// Get the concrete shell basis of a shell in this system  

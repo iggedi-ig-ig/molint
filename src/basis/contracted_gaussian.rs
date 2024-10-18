@@ -11,6 +11,8 @@ pub struct ContractedGaussian {
     pub angular: [i32; 3],
 }
 
+// (x - P_x)^i*(y-P_y)^j*(z-P_z)^k * sum_i^n C_n exp(-E_n * dist^2)
+
 impl ContractedGaussian {
     /// Returns an iterator over all coefficients with their corresponding exponents
     pub(crate) fn iter(&self) -> impl Iterator<Item = (f64, f64)> + '_ {
